@@ -1,28 +1,62 @@
-file   = { SOI ~ "// !$*UTF8*$!" ~ object ~ EOI }
-object = { "{" ~ field ~ (field)* ~ "}" | "{" ~ "}" }
-array  = { "(" ~ value ~ ("," ~ value)* ~ ","? ~ ")" | "(" ~ ")" }
+file    = { SOI ~ "// !$*UTF8*$!" ~ object ~ EOI }
+object  = { "{" ~ field ~ (field)* ~ "}" | "{" ~ "}" }
 field   = { key  ~ "=" ~ value ~ ";" }
 
-key     = @{ literal | string }
+key     = { uuid | ident | string  }
 value   = {
-  bool
+     array
+    | bool
+    | ident
+    | kind
     | number
-    | string
-    | array
     | object
-    | literal
+    | string
+    | uuid
 }
 
-number  = @{  int ~ ("." ~ ASCII_DIGIT+)? ~ WHITESPACE }
-bool    = { ("YES" | "NO") ~ WHITESPACE }
-string  = @{ "\"" ~ inner ~ "\"" }
-literal = @{ ("." | "/")* ~ ASCII_ALPHANUMERIC+  ~ ( ASCII_ALPHANUMERIC | "_" | "."+ | "/" )* }
+array   = { "(" ~ value ~ ("," ~ value)* ~ ","? ~ ")" | "(" ~ ")" }
+bool    = { (^"YES" | ^"NO") ~ !"_" }
+number  = @{ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)* ~ !ASCII_ALPHA }
+string  = @{ "\"" ~ INNER_STRING ~ "\"" }
+ident   = @{
+  (ASCII_ALPHA | ASCII_DIGIT | ("." | "/")* ~ ASCII_ALPHA{2}) ~
+  (ASCII_ALPHA | ASCII_DIGIT | "_" | "." | "/")*
+}
+uuid    = @{
+  (ASCII_ALPHA{1} | ASCII_DIGIT{1}) ~ ASCII_ALPHANUMERIC{23} ~ !(ASCII_ALPHA | ".")
+}
+kind    = @{
+  "PBXFileElement"
+    | "PBXBuildFile"
+    | "PBXFileReference"
+    | "PBXLegacyTarget"
+    | "PBXNativeTarget"
+    | "PBXAggregateTarget"
+    | "PBXProject"
+    | "PBXGroup"
+    | "PBXHeadersBuildPhase"
+    | "PBXFrameworksBuildPhase"
+    | "XCConfigurationList"
+    | "PBXResourcesBuildPhase"
+    | "PBXShellScriptBuildPhase"
+    | "PBXSourcesBuildPhase"
+    | "PBXTargetDependency"
+    | "PBXVariantGroup"
+    | "XCBuildConfiguration"
+    | "PBXCopyFilesBuildPhase"
+    | "PBXContainerItemProxy"
+    | "PBXReferenceProxy"
+    | "XCVersionGroup"
+    | "PBXRezBuildPhase"
+    | "PBXBuildRule"
+    | "XCRemoteSwiftPackageReference"
+    | "XCSwiftPackageProductDependency"
+}
 
-inner   = @{ (!("\"" | "\\") ~ ANY)* ~ (escape ~ inner)? }
+
 escape  = @{ "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t" | unicode) }
 unicode = @{ "u" ~ (ASCII_HEX_DIGIT{4} | ASCII_HEX_DIGIT{3} ~ ASCII_ALPHA) }
 
-int     = @{ "0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT* }
-
+INNER_STRING   = _{ (!("\"" | "\\") ~ ANY)* ~ (escape ~ INNER_STRING)? }
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" | ("\\" ~ unicode) }
 COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
