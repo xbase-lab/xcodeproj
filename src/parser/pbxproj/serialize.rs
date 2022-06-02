@@ -1,22 +1,33 @@
-#![allow(dead_code)]
+#![allow(missing_docs)]
+// use super::XProj;
+use itertools::Itertools;
 use std::{collections::HashMap, num::ParseIntError};
 
-use itertools::Itertools;
 use pest_consume::*;
 use tap::Pipe;
 
+/// Pest Parser to parse into [`XProj`]
 #[derive(Parser)]
 #[grammar = "parser/pbxproj/grammar.pest"]
-pub(crate) struct XProjParser;
+pub(crate) struct PBXProjectParser;
 
+/// Repersentation of all values that can be collected from pbxproj file.
 #[derive(Debug, PartialEq, Eq)]
-pub enum XValue {
+pub(crate) enum XValue {
+    /// UUID value
     UUID(String),
+    /// Object value represented as [`HashMap`]
     Object(HashMap<String, Self>),
+    /// Array of [`XValue`]
     Array(Vec<Self>),
+    /// Normal String value.
+    /// NOTE: This may literal string!
     String(String),
+    /// Number
     Number(u32),
+    /// Boolean representation of YES, NO
     Bool(bool),
+    /// ObjectKind
     Kind(String),
 }
 
@@ -30,11 +41,11 @@ impl XValue {
     }
 }
 
-pub type Result<T> = std::result::Result<T, Error<Rule>>;
-pub type Node<'i> = pest_consume::Node<'i, Rule, ()>;
+pub(crate) type Result<T> = std::result::Result<T, Error<Rule>>;
+pub(crate) type Node<'i> = pest_consume::Node<'i, Rule, ()>;
 
 #[parser]
-impl XProjParser {
+impl PBXProjectParser {
     fn key(input: Node) -> Result<String> {
         let inner = input.into_children().next().unwrap();
         let value = inner.as_str();
@@ -129,10 +140,10 @@ impl XProjParser {
 #[cfg(test)]
 macro_rules! test_file {
     ($path:expr) => {{
-        use $crate::parser::*;
+        use super::*;
 
         let demo = std::fs::read_to_string($path).unwrap();
-        let file = XProjParser::parse(Rule::file, &demo);
+        let file = PBXProjectParser::parse(Rule::file, &demo);
         if file.is_err() {
             println!("Error: {:#?}", file.as_ref().unwrap_err())
         }
@@ -143,7 +154,6 @@ macro_rules! test_file {
 
 #[cfg(test)]
 mod parse_tests {
-    use pest::Parser;
     macro_rules! test_samples {
         ($($name:ident),*) => {
             $(#[test]
@@ -166,8 +176,8 @@ mod consume {
     fn parse_key_pair() {
         let str =
             "0EC07ACE89150EC90442393B = {isa = PBXBuildFile; fileRef = F2E640B5C2B85914F6801498; };";
-        let (key, value) = XProjParser::parse(Rule::field, str)
-            .map(|n| XProjParser::field(n.single().unwrap()))
+        let (key, value) = PBXProjectParser::parse(Rule::field, str)
+            .map(|n| PBXProjectParser::field(n.single().unwrap()))
             .unwrap()
             .unwrap();
 
@@ -188,10 +198,10 @@ mod consume {
     #[test]
     #[ignore = "reason"]
     fn test_consume() {
-        let demo = include_str!("../../tests/samples/demo2.pbxproj");
-        let inputs = XProjParser::parse(Rule::file, demo).unwrap();
+        let demo = include_str!("../../../tests/samples/demo2.pbxproj");
+        let inputs = PBXProjectParser::parse(Rule::file, demo).unwrap();
         let input = inputs.single().unwrap();
-        let object = XProjParser::file(input).unwrap();
+        let object = PBXProjectParser::file(input).unwrap();
         println!("{object:#?}");
     }
 }

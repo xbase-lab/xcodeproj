@@ -1,3 +1,4 @@
+//! pbxproj file serialize and deserializer
 mod rep;
 mod serialize;
 

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 #![deny(future_incompatible)]
 #![deny(nonstandard_style)]
 #![deny(missing_docs)]

@@ -1,1 +1,2 @@
-pub struct XProj {}
+/// Result of Parsing *.pbxproj
+pub struct PBXProject {}
