@@ -6,7 +6,7 @@ use pest_consume::*;
 use tap::Pipe;
 
 #[derive(Parser)]
-#[grammar = "parser/pbxproj.pest"]
+#[grammar = "parser/pbxproj/grammar.pest"]
 pub(crate) struct XProjParser;
 
 #[derive(Debug, PartialEq, Eq)]

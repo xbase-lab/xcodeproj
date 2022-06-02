@@ -5,3 +5,4 @@
 #![doc = include_str!("../README.md")]
 
 mod parser;
+pub use parser::pbxproj;

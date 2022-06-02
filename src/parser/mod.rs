@@ -1,2 +1,1 @@
-mod pbxproj;
-pub use pbxproj::*;
+pub mod pbxproj;
