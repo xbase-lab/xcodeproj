@@ -1,18 +1,19 @@
 file   = { SOI ~ "// !$*UTF8*$!" ~ object ~ EOI }
-object = { "{" ~ pair ~ (pair)* ~ "}" | "{" ~ "}" }
+object = { "{" ~ field ~ (field)* ~ "}" | "{" ~ "}" }
 array  = { "(" ~ value ~ ("," ~ value)* ~ ","? ~ ")" | "(" ~ ")" }
-pair   = { key  ~ "=" ~ value ~ ";" }
+field   = { key  ~ "=" ~ value ~ ";" }
 
 key     = @{ literal | string }
 value   = {
-  object // TODO: fix number
-    | array
-    | bool
-    | literal
+  bool
+    | number
     | string
+    | array
+    | object
+    | literal
 }
 
-number  = @{ "-"? ~ int ~ ("." ~ ASCII_DIGIT+ ~ exp? | exp)? }
+number  = @{  int ~ ("." ~ ASCII_DIGIT+)? ~ WHITESPACE }
 bool    = { ("YES" | "NO") ~ WHITESPACE }
 string  = @{ "\"" ~ inner ~ "\"" }
 literal = @{ ("." | "/")* ~ ASCII_ALPHANUMERIC+  ~ ( ASCII_ALPHANUMERIC | "_" | "."+ | "/" )* }
@@ -22,7 +23,6 @@ escape  = @{ "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t" | unicode) 
 unicode = @{ "u" ~ (ASCII_HEX_DIGIT{4} | ASCII_HEX_DIGIT{3} ~ ASCII_ALPHA) }
 
 int     = @{ "0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT* }
-exp     = @{ ("E" | "e") ~ ("+" | "-")? ~ ASCII_DIGIT+ }
 
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" | ("\\" ~ unicode) }
 COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
