@@ -4,12 +4,12 @@ field   = { key  ~ "=" ~ value ~ ";" }
 
 key     = { uuid | ident | string  }
 value   = {
-     string
-    | array
+     array
+    | object
+    | string
     | bool
     | kind
     | number
-    | object
     | uuid
     | ident
 }
