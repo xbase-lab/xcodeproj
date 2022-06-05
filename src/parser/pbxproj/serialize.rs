@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
-// use super::XProj;
+use super::object::PBXObjectKind;
 use itertools::Itertools;
-use std::{collections::HashMap, num::ParseIntError};
+use std::{collections::HashMap, isize, num::ParseIntError};
 
 use pest_consume::*;
 use tap::Pipe;
@@ -14,21 +14,18 @@ pub(crate) struct PBXProjectParser;
 /// Repersentation of all values that can be collected from pbxproj file.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum XValue {
-    /// UUID value
-    UUID(String),
+    /// Normal String value. NOTE: This may literal string!
+    String(String),
     /// Object value represented as [`HashMap`]
     Object(HashMap<String, Self>),
     /// Array of [`XValue`]
     Array(Vec<Self>),
-    /// Normal String value.
-    /// NOTE: This may literal string!
-    String(String),
     /// Number
-    Number(u32),
+    Number(isize),
     /// Boolean representation of YES, NO
     Bool(bool),
     /// ObjectKind
-    Kind(String),
+    Kind(PBXObjectKind),
 }
 
 impl XValue {
@@ -59,7 +56,8 @@ impl PBXProjectParser {
     }
 
     fn kind(input: Node) -> Result<XValue> {
-        input.as_str().to_string().pipe(XValue::Kind).pipe(Ok)
+        let value = PBXObjectKind::from(input.as_str());
+        value.pipe(XValue::Kind).pipe(Ok)
     }
 
     fn ident(input: Node) -> Result<XValue> {
@@ -67,7 +65,7 @@ impl PBXProjectParser {
     }
 
     fn uuid(input: Node) -> Result<XValue> {
-        input.as_str().to_string().pipe(XValue::UUID).pipe(Ok)
+        input.as_str().to_string().pipe(XValue::String).pipe(Ok)
     }
 
     fn number(input: Node) -> Result<XValue> {
@@ -191,7 +189,7 @@ mod consume {
         );
         assert_eq!(
             object["fileRef"],
-            XValue::UUID("F2E640B5C2B85914F6801498".into())
+            XValue::String("F2E640B5C2B85914F6801498".into())
         );
     }
 
