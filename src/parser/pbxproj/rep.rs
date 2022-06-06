@@ -41,6 +41,38 @@ impl PBXProject {
         }
     }
 
+    /// Extract a string value using key from objects in iterative matter
+    pub fn extract_string<S: AsRef<str>>(&self, key: S) -> Option<&String> {
+        for (_, object) in self.objects.iter() {
+            for (field_key, field_value) in object {
+                if field_key == key.as_ref() {
+                    return field_value.as_string();
+                } else if field_value.is_object() {
+                    if let Some(value) = self._extract_string(key.as_ref(), field_value) {
+                        return Some(value);
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    fn _extract_string<'a>(&'a self, key: &str, value: &'a PBXValue) -> Option<&'a String> {
+        if let PBXValue::Object(object) = value {
+            for (field_key, field_value) in object {
+                if field_key == key {
+                    return field_value.as_string();
+                } else if field_value.is_object() {
+                    if let Some(value) = self._extract_string(key, field_value) {
+                        return Some(value);
+                    }
+                }
+            }
+        }
+
+        None
+    }
+
     /// Get the pbxproject's archive version.
     #[must_use]
     pub fn archive_version(&self) -> u8 {
@@ -84,12 +116,12 @@ impl TryFrom<&str> for PBXProject {
         let mut object = PBXProjectParser::file(node)?;
 
         let archive_version = object
-            .remove("archiveVersion")
+            .remove("archive_version")
             .ok_or_else(|| anyhow::anyhow!("archiveVersion is not found"))?
             .try_into_number()
             .unwrap() as u8;
         let object_version = object
-            .remove("objectVersion")
+            .remove("object_version")
             .ok_or_else(|| anyhow::anyhow!("archiveVersion is not found"))?
             .try_into_number()
             .unwrap() as u8;
@@ -99,7 +131,7 @@ impl TryFrom<&str> for PBXProject {
             .try_into_object()
             .unwrap();
         let root_object_reference = object
-            .remove("rootObject")
+            .remove("root_object")
             .ok_or_else(|| anyhow::anyhow!("rootObject key is not found"))?
             .try_into_string()
             .unwrap();
@@ -141,8 +173,16 @@ impl TryFrom<PathBuf> for PBXProject {
 }
 
 #[test]
-fn test_from_string() {
+fn test_parse() {
     let test_content = include_str!("../../../tests/samples/demo1.pbxproj");
     let project = PBXProject::try_from(test_content).unwrap();
     println!("{project:#?}");
+}
+
+#[test]
+fn test_extract_string() {
+    let test_content = include_str!("../../../tests/samples/demo1.pbxproj");
+    let project = PBXProject::try_from(test_content).unwrap();
+    let development_region = project.extract_string("development_region");
+    assert_eq!(Some(&String::from("en")), development_region);
 }
