@@ -1,5 +1,6 @@
 #![allow(missing_docs)]
 use super::object::PBXObjectKind;
+use convert_case::{Case, Casing};
 use itertools::Itertools;
 use std::{collections::HashMap, isize, num::ParseIntError};
 
@@ -18,8 +19,12 @@ pub(crate) type Node<'i> = pest_consume::Node<'i, Rule, ()>;
 impl PBXProjectParser {
     fn key(input: Node) -> NodeResult<String> {
         let inner = input.into_children().next().unwrap();
-        let value = inner.as_str();
-        value.to_string().pipe(Ok)
+
+        if inner.as_rule() == Rule::ident {
+            Ok(inner.as_str().to_case(Case::Snake))
+        } else {
+            Ok(inner.as_str().to_string())
+        }
     }
 
     fn string(input: Node) -> NodeResult<PBXValue> {
