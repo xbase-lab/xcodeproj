@@ -8,7 +8,7 @@ pub enum PBXValue {
     String(String),
     /// Object value represented as [`HashMap`]
     Object(HashMap<String, Self>),
-    /// Array of [`XValue`]
+    /// Array of [`PBXValue`]
     Array(Vec<Self>),
     /// Number
     Number(isize),
@@ -21,7 +21,7 @@ pub enum PBXValue {
 impl PBXValue {
     /// Returns `true` if the value is [`String`].
     ///
-    /// [`String`]: Value::String
+    /// [`String`]: PBXValue::String
     #[must_use]
     pub fn is_string(&self) -> bool {
         matches!(self, Self::String(..))
@@ -29,7 +29,7 @@ impl PBXValue {
 
     /// Returns `Ok(T)` if the value is [`String`].
     ///
-    /// [`String`]: Value::String
+    /// [`String`]: PBXValue::String
     pub fn try_into_string(self) -> Result<String, Self> {
         if let Self::String(v) = self {
             Ok(v)
@@ -40,7 +40,7 @@ impl PBXValue {
 
     /// Returns `Some(T)` if the value is [`String`].
     ///
-    /// [`String`]: Value::String
+    /// [`String`]: PBXValue::String
     pub fn as_string(&self) -> Option<&String> {
         if let Self::String(v) = self {
             Some(v)
@@ -51,7 +51,7 @@ impl PBXValue {
 
     /// Returns `true` if the value is [`Object`].
     ///
-    /// [`Object`]: Value::Object
+    /// [`Object`]: PBXValue::Object
     #[must_use]
     pub fn is_object(&self) -> bool {
         matches!(self, Self::Object(..))
@@ -59,7 +59,7 @@ impl PBXValue {
 
     /// Returns `Ok(T)` if the value is [`Object`].
     ///
-    /// [`Object`]: Value::Object
+    /// [`Object`]: PBXValue::Object
     pub fn try_into_object(self) -> Result<HashMap<String, Self>, Self> {
         if let Self::Object(v) = self {
             Ok(v)
@@ -70,7 +70,7 @@ impl PBXValue {
 
     /// Returns `Some(T)` if the value is [`Object`].
     ///
-    /// [`Object`]: Value::Object
+    /// [`Object`]: PBXValue::Object
     pub fn as_object(&self) -> Option<&HashMap<String, Self>> {
         if let Self::Object(v) = self {
             Some(v)
@@ -81,7 +81,7 @@ impl PBXValue {
 
     /// Returns `true` if the value is [`Array`].
     ///
-    /// [`Array`]: Value::Array
+    /// [`Array`]: PBXValue::Array
     #[must_use]
     pub fn is_array(&self) -> bool {
         matches!(self, Self::Array(..))
@@ -89,7 +89,7 @@ impl PBXValue {
 
     /// Returns `Some(T)` if the value is [`Array`].
     ///
-    /// [`Array`]: Value::Array
+    /// [`Array`]: PBXValue::Array
     pub fn as_array(&self) -> Option<&Vec<Self>> {
         if let Self::Array(v) = self {
             Some(v)
@@ -100,7 +100,7 @@ impl PBXValue {
 
     /// Returns `Ok(T)` if the value is [`Array`].
     ///
-    /// [`Array`]: Value::Array
+    /// [`Array`]: PBXValue::Array
     pub fn try_into_array(self) -> Result<Vec<Self>, Self> {
         if let Self::Array(v) = self {
             Ok(v)
@@ -111,7 +111,7 @@ impl PBXValue {
 
     /// Returns `true` if the value is [`Number`].
     ///
-    /// [`Number`]: Value::Number
+    /// [`Number`]: PBXValue::Number
     #[must_use]
     pub fn is_number(&self) -> bool {
         matches!(self, Self::Number(..))
@@ -119,7 +119,7 @@ impl PBXValue {
 
     /// Returns `Ok(T)` if the value is [`Number`].
     ///
-    /// [`Number`]: Value::Number
+    /// [`Number`]: PBXValue::Number
     pub fn try_into_number(self) -> Result<isize, Self> {
         if let Self::Number(v) = self {
             Ok(v)
@@ -130,7 +130,7 @@ impl PBXValue {
 
     /// Returns `Some(T)` if the value is [`Number`].
     ///
-    /// [`Number`]: Value::Number
+    /// [`Number`]: PBXValue::Number
     pub fn as_number(&self) -> Option<&isize> {
         if let Self::Number(v) = self {
             Some(v)
@@ -141,7 +141,7 @@ impl PBXValue {
 
     /// Returns `true` if the value is [`Bool`].
     ///
-    /// [`Bool`]: Value::Bool
+    /// [`Bool`]: PBXValue::Bool
     #[must_use]
     pub fn is_bool(&self) -> bool {
         matches!(self, Self::Bool(..))
@@ -149,7 +149,7 @@ impl PBXValue {
 
     /// Returns `Ok(T)` if the value is [`Bool`].
     ///
-    /// [`Bool`]: Value::Bool
+    /// [`Bool`]: PBXValue::Bool
     pub fn try_into_bool(self) -> Result<bool, Self> {
         if let Self::Bool(v) = self {
             Ok(v)
@@ -160,7 +160,7 @@ impl PBXValue {
 
     /// Returns `Some(T)` if the value is [`Bool`].
     ///
-    /// [`Bool`]: Value::Bool
+    /// [`Bool`]: PBXValue::Bool
     pub fn as_bool(&self) -> Option<&bool> {
         if let Self::Bool(v) = self {
             Some(v)
@@ -171,7 +171,7 @@ impl PBXValue {
 
     /// Returns `true` if the value is [`Kind`].
     ///
-    /// [`Kind`]: Value::Kind
+    /// [`Kind`]: PBXValue::Kind
     #[must_use]
     pub fn is_kind(&self) -> bool {
         matches!(self, Self::Kind(..))
@@ -179,7 +179,7 @@ impl PBXValue {
 
     /// Returns `Some(T)` if the value is [`Kind`].
     ///
-    /// [`Kind`]: Value::Kind
+    /// [`Kind`]: PBXValue::Kind
     pub fn as_kind(&self) -> Option<&PBXObjectKind> {
         if let Self::Kind(v) = self {
             Some(v)
@@ -190,7 +190,7 @@ impl PBXValue {
 
     /// Returns `Ok(T)` if the value is [`Kind`].
     ///
-    /// [`Bool`]: Value::Kind
+    /// [`Kind`]: PBXValue::Kind
     pub fn try_into_kind(self) -> Result<PBXObjectKind, Self> {
         if let Self::Kind(v) = self {
             Ok(v)
