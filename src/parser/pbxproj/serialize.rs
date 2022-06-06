@@ -372,7 +372,7 @@ mod consume {
             Some(&PBXValue::Kind("PBXBuildFile".into()))
         );
         assert_eq!(
-            object["fileRef"],
+            object["file_ref"],
             PBXValue::String("F2E640B5C2B85914F6801498".into())
         );
     }
