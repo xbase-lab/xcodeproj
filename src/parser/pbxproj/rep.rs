@@ -1,4 +1,4 @@
-use super::serialize::PBXValue;
+use super::PBXValue;
 use anyhow::{Context, Result};
 use std::{
     collections::HashMap,
