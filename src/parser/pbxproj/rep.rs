@@ -1,4 +1,4 @@
-use super::PBXValue;
+use super::{PBXHashMap, PBXValue};
 use std::collections::HashMap;
 
 /// Result of Parsing *.pbxproj
@@ -9,9 +9,9 @@ pub struct PBXProjectData {
     /// objectVersion
     object_version: u8,
     /// classes
-    classes: HashMap<String, PBXValue>,
+    classes: PBXHashMap,
     /// Objects
-    objects: HashMap<String, HashMap<String, PBXValue>>,
+    objects: PBXHashMap,
     /// rootObjectReference
     root_object_reference: String,
 }
@@ -31,7 +31,7 @@ impl PBXProjectData {
 
     /// Get a reference to the pbxproject's classes.
     #[must_use]
-    pub fn classes(&self) -> &HashMap<String, PBXValue> {
+    pub fn classes(&self) -> &PBXHashMap {
         &self.classes
     }
 
@@ -41,46 +41,13 @@ impl PBXProjectData {
         self.root_object_reference.as_ref()
     }
 
-    /// Extract a string value using key from objects in iterative matter
-    pub fn extract_string<S: AsRef<str>>(&self, key: S) -> Option<&String> {
-        self.extract_value(key).map(|v| v.as_string()).flatten()
-    }
-
-    /// Extract a string value using key from objects in iterative matter
-    pub fn extract_value<S: AsRef<str>>(&self, key: S) -> Option<&PBXValue> {
-        for (_, object) in self.objects.iter() {
-            if let Some(value) = self._extract_value(key.as_ref(), object) {
-                return Some(value);
-            }
-        }
-        None
-    }
-
-    fn _extract_value<'a>(
-        &'a self,
-        key: &str,
-        object: &'a HashMap<String, PBXValue>,
-    ) -> Option<&'a PBXValue> {
-        for (field_key, field_value) in object {
-            if field_key == key {
-                return Some(field_value);
-            } else if let PBXValue::Object(object) = field_value {
-                if let Some(value) = self._extract_value(key, object) {
-                    return Some(value);
-                }
-            }
-        }
-
-        None
-    }
-
     /// Create new PBXProject with required fields
     /// Use PBXProject::try_from(String/&str/Path/PathBuf) instead to parse and create object
     pub fn new(
         archive_version: u8,
         object_version: u8,
-        classes: HashMap<String, PBXValue>,
-        objects: HashMap<String, HashMap<String, PBXValue>>,
+        classes: PBXHashMap,
+        objects: PBXHashMap,
         root_object_reference: String,
     ) -> Self {
         Self {

@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 use super::object::PBXObjectKind;
-use super::PBXProjectData;
+use super::{PBXArray, PBXHashMap, PBXProjectData};
 use crate::pbxproj::PBXValue;
 use anyhow::Context;
 use convert_case::{Case, Casing};
@@ -78,6 +78,7 @@ impl PBXProjectParser {
         match_nodes!(input.into_children();
             [value(values)..] => values.collect::<Vec<PBXValue>>()
         )
+        .pipe(PBXArray::new)
         .pipe(PBXValue::Array)
         .pipe(Ok)
     }
@@ -108,11 +109,12 @@ impl PBXProjectParser {
         match_nodes!(input.into_children();
             [field(fields)..] => fields.collect::<HashMap<String, PBXValue>>(),
         )
+        .pipe(PBXHashMap::new)
         .pipe(PBXValue::Object)
         .pipe(Ok)
     }
 
-    pub fn file(input: Node) -> NodeResult<HashMap<String, PBXValue>> {
+    pub fn file(input: Node) -> NodeResult<PBXHashMap> {
         let node = input.into_children().next().unwrap();
         Self::object(node)?.try_into_object().unwrap().pipe(Ok)
     }
@@ -125,35 +127,12 @@ impl TryFrom<&str> for PBXProjectData {
         let node = nodes.single().context("nodes to single")?;
         let mut object = PBXProjectParser::file(node)?;
 
-        let archive_version = object
-            .remove("archive_version")
-            .ok_or_else(|| anyhow::anyhow!("archiveVersion is not found"))?
-            .try_into_number()
-            .unwrap() as u8;
-        let object_version = object
-            .remove("object_version")
-            .ok_or_else(|| anyhow::anyhow!("archiveVersion is not found"))?
-            .try_into_number()
-            .unwrap() as u8;
-        let classes = object
-            .remove("classes")
-            .unwrap_or(PBXValue::Object(HashMap::new()))
-            .try_into_object()
-            .unwrap();
-        let root_object_reference = object
-            .remove("root_object")
-            .ok_or_else(|| anyhow::anyhow!("rootObject key is not found"))?
-            .try_into_string()
-            .unwrap();
-        let objects = object
-            .remove("objects")
-            .ok_or_else(|| anyhow::anyhow!("objects key is not found"))?
-            .try_into_object()
-            .unwrap()
-            .into_iter()
-            .map(|(k, v)| (k, v.try_into_object().unwrap()))
-            .collect();
+        let archive_version = object.try_remove_number("archive_version")? as u8;
+        let object_version = object.try_remove_number("object_version")? as u8;
+        let classes = object.try_remove_object("classes").unwrap_or_default();
+        let root_object_reference = object.try_remove_string("root_object")?;
 
+        let objects = object.try_remove_object("objects")?;
         Ok(Self::new(
             archive_version,
             object_version,
