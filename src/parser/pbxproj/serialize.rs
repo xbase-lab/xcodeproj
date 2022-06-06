@@ -1,5 +1,6 @@
 #![allow(missing_docs)]
-use super::{object::PBXObjectKind, PBXProject};
+use super::object::PBXObjectKind;
+use super::PBXProjectData;
 use crate::pbxproj::PBXValue;
 use anyhow::Context;
 use convert_case::{Case, Casing};
@@ -117,7 +118,7 @@ impl PBXProjectParser {
     }
 }
 
-impl TryFrom<&str> for PBXProject {
+impl TryFrom<&str> for PBXProjectData {
     type Error = anyhow::Error;
     fn try_from(content: &str) -> anyhow::Result<Self> {
         let nodes = PBXProjectParser::parse(Rule::file, content).context("Parse content")?;
@@ -163,24 +164,24 @@ impl TryFrom<&str> for PBXProject {
     }
 }
 
-impl TryFrom<String> for PBXProject {
+impl TryFrom<String> for PBXProjectData {
     type Error = anyhow::Error;
     fn try_from(content: String) -> anyhow::Result<Self> {
-        PBXProject::try_from(content.as_str())
+        PBXProjectData::try_from(content.as_str())
     }
 }
 
-impl TryFrom<&Path> for PBXProject {
+impl TryFrom<&Path> for PBXProjectData {
     type Error = anyhow::Error;
 
     fn try_from(value: &Path) -> anyhow::Result<Self> {
         std::fs::read_to_string(&value)
-            .map_err(|e| anyhow::anyhow!("PBXProject from path {value:?}: {e}"))?
+            .map_err(|e| anyhow::anyhow!("PBXProjectData from path {value:?}: {e}"))?
             .pipe(TryFrom::try_from)
     }
 }
 
-impl TryFrom<PathBuf> for PBXProject {
+impl TryFrom<PathBuf> for PBXProjectData {
     type Error = anyhow::Error;
 
     fn try_from(value: PathBuf) -> anyhow::Result<Self> {
