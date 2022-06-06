@@ -1,8 +1,10 @@
 #![allow(missing_docs)]
-use super::object::PBXObjectKind;
+use super::{object::PBXObjectKind, PBXProject};
 use crate::pbxproj::PBXValue;
+use anyhow::Context;
 use convert_case::{Case, Casing};
 use itertools::Itertools;
+use std::path::{Path, PathBuf};
 use std::{collections::HashMap, num::ParseIntError};
 
 use pest_consume::*;
@@ -112,6 +114,77 @@ impl PBXProjectParser {
     pub fn file(input: Node) -> NodeResult<HashMap<String, PBXValue>> {
         let node = input.into_children().next().unwrap();
         Self::object(node)?.try_into_object().unwrap().pipe(Ok)
+    }
+}
+
+impl TryFrom<&str> for PBXProject {
+    type Error = anyhow::Error;
+    fn try_from(content: &str) -> anyhow::Result<Self> {
+        let nodes = PBXProjectParser::parse(Rule::file, content).context("Parse content")?;
+        let node = nodes.single().context("nodes to single")?;
+        let mut object = PBXProjectParser::file(node)?;
+
+        let archive_version = object
+            .remove("archive_version")
+            .ok_or_else(|| anyhow::anyhow!("archiveVersion is not found"))?
+            .try_into_number()
+            .unwrap() as u8;
+        let object_version = object
+            .remove("object_version")
+            .ok_or_else(|| anyhow::anyhow!("archiveVersion is not found"))?
+            .try_into_number()
+            .unwrap() as u8;
+        let classes = object
+            .remove("classes")
+            .unwrap_or(PBXValue::Object(HashMap::new()))
+            .try_into_object()
+            .unwrap();
+        let root_object_reference = object
+            .remove("root_object")
+            .ok_or_else(|| anyhow::anyhow!("rootObject key is not found"))?
+            .try_into_string()
+            .unwrap();
+        let objects = object
+            .remove("objects")
+            .ok_or_else(|| anyhow::anyhow!("objects key is not found"))?
+            .try_into_object()
+            .unwrap()
+            .into_iter()
+            .map(|(k, v)| (k, v.try_into_object().unwrap()))
+            .collect();
+
+        Ok(Self::new(
+            archive_version,
+            object_version,
+            classes,
+            objects,
+            root_object_reference,
+        ))
+    }
+}
+
+impl TryFrom<String> for PBXProject {
+    type Error = anyhow::Error;
+    fn try_from(content: String) -> anyhow::Result<Self> {
+        PBXProject::try_from(content.as_str())
+    }
+}
+
+impl TryFrom<&Path> for PBXProject {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &Path) -> anyhow::Result<Self> {
+        std::fs::read_to_string(&value)
+            .map_err(|e| anyhow::anyhow!("PBXProject from path {value:?}: {e}"))?
+            .pipe(TryFrom::try_from)
+    }
+}
+
+impl TryFrom<PathBuf> for PBXProject {
+    type Error = anyhow::Error;
+
+    fn try_from(value: PathBuf) -> anyhow::Result<Self> {
+        Self::try_from(value.as_path())
     }
 }
 
