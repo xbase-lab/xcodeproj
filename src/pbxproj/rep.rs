@@ -1,8 +1,11 @@
 use super::PBXHashMap;
+use anyhow::Result;
+use std::path::{Path, PathBuf};
+use tap::Pipe;
 
 /// Result of Parsing *.pbxproj
-#[derive(Debug)]
-pub struct PBXProjectData {
+#[derive(Debug, derive_new::new)]
+pub struct PBXRootObject {
     /// archiveVersion
     archive_version: u8,
     /// objectVersion
@@ -15,7 +18,7 @@ pub struct PBXProjectData {
     root_object_reference: String,
 }
 
-impl PBXProjectData {
+impl PBXRootObject {
     /// Get the pbxproject's archive version.
     #[must_use]
     pub fn archive_version(&self) -> u8 {
@@ -39,45 +42,79 @@ impl PBXProjectData {
     pub fn root_object_reference(&self) -> &str {
         self.root_object_reference.as_ref()
     }
+}
 
-    /// Create new PBXProject with required fields
-    /// Use PBXProject::try_from(String/&str/Path/PathBuf) instead to parse and create object
-    pub fn new(
-        archive_version: u8,
-        object_version: u8,
-        classes: PBXHashMap,
-        objects: PBXHashMap,
-        root_object_reference: String,
-    ) -> Self {
-        Self {
+impl TryFrom<PBXHashMap> for PBXRootObject {
+    type Error = anyhow::Error;
+    fn try_from(mut map: PBXHashMap) -> Result<Self> {
+        let archive_version = map.try_remove_number("archive_version")? as u8;
+        let object_version = map.try_remove_number("object_version")? as u8;
+        let classes = map.try_remove_object("classes").unwrap_or_default();
+        let root_object_reference = map.try_remove_string("root_object")?;
+        let objects = map.try_remove_object("objects")?;
+
+        Ok(Self {
             archive_version,
             object_version,
             classes,
             objects,
             root_object_reference,
-        }
+        })
     }
 }
 
+impl TryFrom<&str> for PBXRootObject {
+    type Error = anyhow::Error;
+    fn try_from(content: &str) -> Result<Self> {
+        use crate::pbxproj::pest::PBXProjectParser;
+
+        PBXProjectParser::try_from_str(content)?.pipe(Self::try_from)
+    }
+}
+
+impl TryFrom<String> for PBXRootObject {
+    type Error = anyhow::Error;
+    fn try_from(content: String) -> Result<Self> {
+        Self::try_from(content.as_str())
+    }
+}
+
+impl TryFrom<&Path> for PBXRootObject {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &Path) -> Result<Self> {
+        std::fs::read_to_string(&value)
+            .map_err(|e| anyhow::anyhow!("PBXProjectData from path {value:?}: {e}"))?
+            .pipe(TryFrom::try_from)
+    }
+}
+
+impl TryFrom<PathBuf> for PBXRootObject {
+    type Error = anyhow::Error;
+
+    fn try_from(value: PathBuf) -> Result<Self> {
+        Self::try_from(value.as_path())
+    }
+}
 #[test]
 #[ignore = "check_output"]
 fn test_parse() {
     let test_content = include_str!("../../tests/samples/demo1.pbxproj");
-    let project = PBXProjectData::try_from(test_content).unwrap();
+    let project = PBXRootObject::try_from(test_content).unwrap();
     println!("{project:#?}");
 }
 
 #[test]
 fn test_extract_string() {
     let test_content = include_str!("../../tests/samples/demo1.pbxproj");
-    let project = PBXProjectData::try_from(test_content).unwrap();
+    let project = PBXRootObject::try_from(test_content).unwrap();
     // let development_region = project.extract_string("development_region");
     // assert_eq!(Some(&String::from("en")), development_region);
 }
 #[test]
 fn test_extract_value() {
     let test_content = include_str!("../../tests/samples/demo2.pbxproj");
-    let project = PBXProjectData::try_from(test_content).unwrap();
+    let project = PBXRootObject::try_from(test_content).unwrap();
     // let has_scanned_for_encodings = project.extract_value("has_scanned_for_encodings");
     // let targets = project.extract_value("targets");
     // assert_eq!(Some(&PBXValue::Number(0)), has_scanned_for_encodings);
