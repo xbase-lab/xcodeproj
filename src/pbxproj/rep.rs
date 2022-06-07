@@ -62,21 +62,21 @@ impl PBXProjectData {
 #[test]
 #[ignore = "check_output"]
 fn test_parse() {
-    let test_content = include_str!("../../../tests/samples/demo1.pbxproj");
+    let test_content = include_str!("../../tests/samples/demo1.pbxproj");
     let project = PBXProjectData::try_from(test_content).unwrap();
     println!("{project:#?}");
 }
 
 #[test]
 fn test_extract_string() {
-    let test_content = include_str!("../../../tests/samples/demo1.pbxproj");
+    let test_content = include_str!("../../tests/samples/demo1.pbxproj");
     let project = PBXProjectData::try_from(test_content).unwrap();
     // let development_region = project.extract_string("development_region");
     // assert_eq!(Some(&String::from("en")), development_region);
 }
 #[test]
 fn test_extract_value() {
-    let test_content = include_str!("../../../tests/samples/demo2.pbxproj");
+    let test_content = include_str!("../../tests/samples/demo2.pbxproj");
     let project = PBXProjectData::try_from(test_content).unwrap();
     // let has_scanned_for_encodings = project.extract_value("has_scanned_for_encodings");
     // let targets = project.extract_value("targets");

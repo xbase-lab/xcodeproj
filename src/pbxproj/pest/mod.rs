@@ -13,7 +13,7 @@ use tap::Pipe;
 
 /// Pest Parser to parse into [`XProj`]
 #[derive(Parser)]
-#[grammar = "parser/pbxproj/pest/grammar.pest"]
+#[grammar = "pbxproj/pest/grammar.pest"]
 pub(crate) struct PBXProjectParser;
 
 pub(crate) type NodeResult<T> = std::result::Result<T, Error<Rule>>;
