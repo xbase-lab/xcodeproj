@@ -15,8 +15,6 @@ pub enum PBXObjectKind {
     PBXContainerItemProxy,
     /// A Kind representing the copy file build phase
     PBXCopyFilesBuildPhase,
-    /// A Kind representing an abstract parent for file and group elements
-    PBXFileElement,
     /// A Kind representing to track every external file referenced by the project: source files,
     /// resource files, libraries, generated application files, and so on.
     PBXFileReference,
@@ -60,14 +58,6 @@ pub enum PBXObjectKind {
 }
 
 impl PBXObjectKind {
-    /// Returns `true` if the object kind is [`FileElement`].
-    ///
-    /// [`FileElement`]:PBXObjectKind::PBXFileElement
-    #[must_use]
-    pub fn is_file_element(&self) -> bool {
-        matches!(self, Self::PBXFileElement)
-    }
-
     /// Returns `true` if the object kind is [`BuildFile`].
     ///
     /// [`BuildFile`]:PBXObjectKind::PBXBuildFile
@@ -283,7 +273,6 @@ impl PBXObjectKind {
 impl From<&str> for PBXObjectKind {
     fn from(s: &str) -> Self {
         match s {
-            "PBXFileElement" => Self::PBXFileElement,
             "PBXBuildFile" => Self::PBXBuildFile,
             "PBXFileReference" => Self::PBXFileReference,
             "PBXLegacyTarget" => Self::PBXLegacyTarget,
@@ -316,7 +305,6 @@ impl From<&str> for PBXObjectKind {
 impl ToString for PBXObjectKind {
     fn to_string(&self) -> String {
         match self {
-            Self::PBXFileElement => "PBXFileElement",
             Self::PBXBuildFile => "PBXBuildFile",
             Self::PBXFileReference => "PBXFileReference",
             Self::PBXLegacyTarget => "PBXLegacyTarget",

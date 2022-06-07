@@ -1,5 +1,4 @@
-use super::{PBXHashMap, PBXValue};
-use std::collections::HashMap;
+use super::PBXHashMap;
 
 /// Result of Parsing *.pbxproj
 #[derive(Debug)]
