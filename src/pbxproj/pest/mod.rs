@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 use super::object::PBXObjectKind;
-use super::{PBXArray, PBXHashMap};
+use super::{PBXHashMap, PBXVec};
 use crate::pbxproj::PBXValue;
 use anyhow::{anyhow, Context, Result};
 use convert_case::{Case, Casing};
@@ -100,8 +100,8 @@ impl PBXProjectParser {
         match_nodes!(input.into_children();
             [value(values)..] => values.collect::<Vec<PBXValue>>()
         )
-        .pipe(PBXArray::new)
-        .pipe(PBXValue::Array)
+        .pipe(PBXVec::new)
+        .pipe(PBXValue::Vec)
         .pipe(Ok)
     }
 

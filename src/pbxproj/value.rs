@@ -5,7 +5,7 @@ use derive_deref_rs::Deref;
 use std::collections::HashMap;
 
 #[derive(Default, Debug, Deref, PartialEq, Eq)]
-/// ...
+/// [`HashMap`] wrapper for [`PBXValue`] with helpers
 pub struct PBXHashMap(pub(crate) HashMap<String, PBXValue>);
 
 impl PBXHashMap {
@@ -39,10 +39,10 @@ impl PBXHashMap {
 }
 
 #[derive(Default, Debug, Deref, PartialEq, Eq)]
-/// ...
-pub struct PBXArray(Vec<PBXValue>);
+/// [`Vec`] wrapper for [`PBXValue`] with helpers
+pub struct PBXVec(Vec<PBXValue>);
 
-impl PBXArray {
+impl PBXVec {
     pub(crate) fn new(inner: Vec<PBXValue>) -> Self {
         Self(inner)
     }
@@ -91,7 +91,7 @@ macro_rules! gen_hash_map_helpers {
 
 gen_hash_map_helpers! {
     [string, String],
-    [array, PBXArray],
+    [vec, PBXVec],
     [bool, bool],
     [number, isize],
     [kind, PBXObjectKind],
@@ -105,8 +105,8 @@ pub enum PBXValue {
     String(String),
     /// Object value represented as [`HashMap`]
     Object(PBXHashMap),
-    /// Array of [`PBXValue`]
-    Array(PBXArray),
+    /// Vec of [`PBXValue`]
+    Vec(PBXVec),
     /// Number
     Number(isize),
     /// Boolean representation of YES, NO
@@ -176,33 +176,33 @@ impl PBXValue {
         }
     }
 
-    /// Returns `true` if the value is [`Array`].
+    /// Returns `true` if the value is [`Vec`].
     ///
-    /// [`Array`]: PBXValue::Array
+    /// [`Vec`]: PBXValue::Vec
     #[must_use]
-    pub fn is_array(&self) -> bool {
-        matches!(self, Self::Array(..))
+    pub fn is_vec(&self) -> bool {
+        matches!(self, Self::Vec(..))
     }
 
-    /// Returns `Some(T)` if the value is [`Array`].
+    /// Returns `Some(T)` if the value is [`Vec`].
     ///
-    /// [`Array`]: PBXValue::Array
-    pub fn as_array(&self) -> Option<&PBXArray> {
-        if let Self::Array(v) = self {
+    /// [`Vec`]: PBXValue::Vec
+    pub fn as_vec(&self) -> Option<&PBXVec> {
+        if let Self::Vec(v) = self {
             Some(v)
         } else {
             None
         }
     }
 
-    /// Returns `Ok(T)` if the value is [`Array`].
+    /// Returns `Ok(T)` if the value is [`Vec`].
     ///
-    /// [`Array`]: PBXValue::Array
-    pub fn try_into_array(self) -> Result<PBXArray> {
-        if let Self::Array(v) = self {
+    /// [`Vec`]: PBXValue::Vec
+    pub fn try_into_vec(self) -> Result<PBXVec> {
+        if let Self::Vec(v) = self {
             Ok(v)
         } else {
-            bail!("expected array got {self:#?}")
+            bail!("expected Vec got {self:#?}")
         }
     }
 
