@@ -47,10 +47,10 @@ impl PBXRootObject {
 impl TryFrom<PBXHashMap> for PBXRootObject {
     type Error = anyhow::Error;
     fn try_from(mut map: PBXHashMap) -> Result<Self> {
-        let archive_version = map.try_remove_number("archive_version")? as u8;
-        let object_version = map.try_remove_number("object_version")? as u8;
+        let archive_version = map.try_remove_number("archiveVersion")? as u8;
+        let object_version = map.try_remove_number("objectVersion")? as u8;
         let classes = map.try_remove_object("classes").unwrap_or_default();
-        let root_object_reference = map.try_remove_string("root_object")?;
+        let root_object_reference = map.try_remove_string("rootObject")?;
         let objects = map.try_remove_object("objects")?;
 
         Ok(Self {

@@ -3,7 +3,6 @@ use super::object::PBXObjectKind;
 use super::{PBXHashMap, PBXVec};
 use crate::pbxproj::PBXValue;
 use anyhow::{anyhow, Context, Result};
-use convert_case::{Case, Casing};
 use itertools::Itertools;
 use std::path::Path;
 use std::{collections::HashMap, num::ParseIntError};
@@ -15,42 +14,14 @@ use tap::Pipe;
 #[derive(Parser)]
 #[grammar = "pbxproj/pest/grammar.pest"]
 pub(crate) struct PBXProjectParser;
-
 pub(crate) type NodeResult<T> = std::result::Result<T, Error<Rule>>;
 pub(crate) type Node<'i> = pest_consume::Node<'i, Rule, ()>;
-
-impl PBXProjectParser {
-    pub fn try_parse_from_file<P>(path: P) -> Result<PBXHashMap>
-    where
-        P: AsRef<Path> + std::fmt::Debug,
-    {
-        std::fs::read_to_string(&path)
-            .map_err(|e| anyhow!("PBXProjectData from path {path:?}: {e}"))?
-            .pipe(Self::try_from_str)
-    }
-
-    pub fn try_from_str<S>(content: S) -> Result<PBXHashMap>
-    where
-        S: AsRef<str>,
-    {
-        PBXProjectParser::parse(Rule::file, content.as_ref())
-            .context("Parse content")?
-            .pipe(|n| n.single().context("nodes to single node"))?
-            .pipe(PBXProjectParser::file)
-            .context("parse into PBXHashMap")
-    }
-}
 
 #[parser]
 impl PBXProjectParser {
     fn key(input: Node) -> NodeResult<String> {
         let inner = input.into_children().next().unwrap();
-
-        if inner.as_rule() == Rule::ident {
-            Ok(inner.as_str().to_case(Case::Snake))
-        } else {
-            Ok(inner.as_str().to_string())
-        }
+        Ok(inner.as_str().to_string())
     }
 
     fn string(input: Node) -> NodeResult<PBXValue> {
@@ -139,6 +110,28 @@ impl PBXProjectParser {
     pub fn file(input: Node) -> NodeResult<PBXHashMap> {
         let node = input.into_children().next().unwrap();
         Self::object(node)?.try_into_object().unwrap().pipe(Ok)
+    }
+}
+
+impl PBXProjectParser {
+    pub fn try_parse_from_file<P>(path: P) -> Result<PBXHashMap>
+    where
+        P: AsRef<Path> + std::fmt::Debug,
+    {
+        std::fs::read_to_string(&path)
+            .map_err(|e| anyhow!("PBXProjectData from path {path:?}: {e}"))?
+            .pipe(Self::try_from_str)
+    }
+
+    pub fn try_from_str<S>(content: S) -> Result<PBXHashMap>
+    where
+        S: AsRef<str>,
+    {
+        PBXProjectParser::parse(Rule::file, content.as_ref())
+            .context("Parse content")?
+            .pipe(|n| n.single().context("nodes to single node"))?
+            .pipe(PBXProjectParser::file)
+            .context("parse into PBXHashMap")
     }
 }
 
