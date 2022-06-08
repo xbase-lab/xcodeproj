@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tap::Pipe;
 
 /// [`XCRemoteSwiftPackageReference`] version rules.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum XCVersionRequirement {
     /// Version can be bumped up to the next major version.
     UpToNextMajorVersion(String),

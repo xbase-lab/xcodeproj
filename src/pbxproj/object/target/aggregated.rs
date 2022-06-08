@@ -7,7 +7,7 @@ use derive_deref_rs::Deref;
 #[derive(Debug, Deref, derive_new::new)]
 pub struct PBXAggregateTarget {
     #[deref]
-    inner: PBXTarget,
+    pub(crate) inner: PBXTarget,
 }
 
 impl TryFrom<PBXHashMap> for PBXAggregateTarget {

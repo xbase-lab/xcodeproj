@@ -15,7 +15,7 @@ pub struct PBXLegacyTarget {
     /// The directory where the build tool will be invoked during a build
     pub build_working_directory: Option<String>,
     #[deref]
-    inner: PBXTarget,
+    pub(crate) inner: PBXTarget,
 }
 
 impl TryFrom<PBXHashMap> for PBXLegacyTarget {

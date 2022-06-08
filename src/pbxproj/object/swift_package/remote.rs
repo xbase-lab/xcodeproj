@@ -10,7 +10,7 @@ pub struct XCRemoteSwiftPackageReference {
     /// Repository url.
     pub repository_url: Option<String>,
     /// Version rules.
-    pub requirement: Option<XCVersionRequirement>,
+    pub version_requirement: Option<XCVersionRequirement>,
 }
 
 impl XCRemoteSwiftPackageReference {
@@ -20,6 +20,12 @@ impl XCRemoteSwiftPackageReference {
             .as_ref()
             .map(|s| s.split("/").last())
             .flatten()
+    }
+
+    /// Get a reference to the xcremote swift package reference's version requirement.
+    #[must_use]
+    pub fn version_requirement(&self) -> Option<&XCVersionRequirement> {
+        self.version_requirement.as_ref()
     }
 }
 
@@ -32,7 +38,7 @@ impl TryFrom<PBXHashMap> for XCRemoteSwiftPackageReference {
                 .remove_value("repository_url")
                 .map(|v| v.try_into().ok())
                 .flatten(),
-            requirement: value
+            version_requirement: value
                 .remove_value("requirement")
                 .map(|v| v.try_into().ok())
                 .flatten(),

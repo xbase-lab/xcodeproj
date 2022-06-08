@@ -9,7 +9,7 @@ pub struct PBXNativeTarget {
     /// Target product install path.
     pub product_install_path: Option<String>,
     #[deref]
-    inner: PBXTarget,
+    pub(crate) inner: PBXTarget,
 }
 
 impl PBXNativeTarget {

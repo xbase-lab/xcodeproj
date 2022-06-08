@@ -5,8 +5,10 @@ mod project;
 mod swift_package;
 mod target;
 
+mod collection;
 mod kind;
 mod product_type;
+
 pub use kind::*;
 pub use product_type::*;
 
@@ -17,3 +19,5 @@ pub use project::*;
 
 pub use swift_package::*;
 pub use target::*;
+
+pub use collection::*;

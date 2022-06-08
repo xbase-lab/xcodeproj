@@ -26,10 +26,9 @@ impl XCConfigurationList {
         &'a self,
         data: &'a PBXRootObject,
     ) -> Vec<&'a XCBuildConfiguration> {
-        let objects = data.objects();
         self.build_configuration_references
             .iter()
-            .map(|r| Some(objects.get(r)?.as_xc_build_configuration()?))
+            .map(|r| Some(data.get(r)?.as_xc_build_configuration()?))
             .flatten()
             .collect()
     }
@@ -50,16 +49,14 @@ impl XCConfigurationList {
         let mut configurations = vec![];
         let debug = XCBuildConfiguration::new("Debug".into(), Default::default(), None);
         let debug_id = uuid::Uuid::new_v4().to_string();
-        data.objects_mut()
-            .insert(debug_id.clone(), PBXObject::XCBuildConfiguration(debug));
+        data.insert(debug_id.clone(), PBXObject::XCBuildConfiguration(debug));
 
         configurations.push(debug_id);
 
         let release = XCBuildConfiguration::new("Release".into(), Default::default(), None);
         let release_id = uuid::Uuid::new_v4().to_string();
 
-        data.objects_mut()
-            .insert(release_id.clone(), PBXObject::XCBuildConfiguration(release));
+        data.insert(release_id.clone(), PBXObject::XCBuildConfiguration(release));
 
         configurations.push(release_id);
 
@@ -70,8 +67,7 @@ impl XCConfigurationList {
     pub fn object_with_configuration_list(&self, data: &PBXRootObject) -> Option<&PBXObject> {
         // projects, Native target, aggregateTargets, legacyTargets build_configuration_list_reference
 
-        let _objects = data.objects();
-        // objects.iter().find(|o| {
+        // data.iter().find(|o| {
         //     match o {
         //         PBXObject::PBXProject(p) => p
         //     }

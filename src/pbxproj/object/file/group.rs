@@ -27,10 +27,9 @@ impl PBXGroup {
 
     /// Group children.
     pub fn children<'a>(&'a self, data: &'a PBXRootObject) -> Vec<&'a PBXObject> {
-        let objects = data.objects();
         self.children_references
             .iter()
-            .map(|r| objects.get(r))
+            .map(|r| data.get(r))
             .flatten()
             .collect::<Vec<_>>()
     }

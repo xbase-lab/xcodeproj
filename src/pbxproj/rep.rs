@@ -1,4 +1,4 @@
-use super::{PBXHashMap, PBXObject};
+use super::{PBXHashMap, PBXObject, PBXObjectCollection};
 use anyhow::Result;
 use std::{
     collections::HashMap,
@@ -7,7 +7,7 @@ use std::{
 use tap::Pipe;
 
 /// `Main` Representation of project.pbxproj file
-#[derive(Debug, derive_new::new)]
+#[derive(Debug, derive_new::new, derive_deref_rs::Deref)]
 pub struct PBXRootObject {
     /// archiveVersion
     archive_version: u8,
@@ -16,7 +16,8 @@ pub struct PBXRootObject {
     /// classes
     classes: PBXHashMap,
     /// Objects
-    objects: HashMap<String, PBXObject>,
+    #[deref]
+    objects: PBXObjectCollection,
     /// rootObjectReference
     root_object_reference: String,
 }
@@ -45,28 +46,6 @@ impl PBXRootObject {
     pub fn root_object_reference(&self) -> &str {
         self.root_object_reference.as_ref()
     }
-
-    /// Get a reference to the pbxproject data's objects.
-    // #[must_use]
-    pub fn objects(&self) -> &HashMap<String, PBXObject> {
-        &self.objects
-    }
-
-    /// Get a mutable reference to the pbxproject data's objects.
-    // #[must_use]
-    pub fn objects_mut(&mut self) -> &mut HashMap<String, PBXObject> {
-        &mut self.objects
-    }
-
-    /// Get object by reference.
-    pub fn get_object(&self, reference: &str) -> Option<&PBXObject> {
-        self.objects.get(reference)
-    }
-
-    /// Get mutable object by reference.
-    pub fn get_mut_object(&mut self, reference: &str) -> Option<&mut PBXObject> {
-        self.objects.get_mut(reference)
-    }
 }
 
 impl TryFrom<PBXHashMap> for PBXRootObject {
@@ -87,7 +66,8 @@ impl TryFrom<PBXHashMap> for PBXRootObject {
                 .into_iter()
                 .map(|(k, v)| anyhow::Ok((k, PBXObject::try_from(v)?)))
                 .flatten()
-                .collect::<HashMap<_, _>>(),
+                .collect::<HashMap<_, _>>()
+                .pipe(PBXObjectCollection::new),
 
             root_object_reference,
         })
