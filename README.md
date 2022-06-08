@@ -5,7 +5,7 @@ XcodeProj parser and data representation
 ## Features
 
 - [x] parse `*.xcodeproj` through [pest]
-- [ ] parse [pest] ast to `ProjectData`, as an meaningful abstraction.
+- [x] parse [pest] ast to `PBXRootObject`, as an meaningful abstraction.
 - [ ] write `ProjectData` back to `*.xcodeproj` filetype.
 
 
