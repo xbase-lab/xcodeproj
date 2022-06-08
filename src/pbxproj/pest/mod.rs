@@ -140,8 +140,7 @@ macro_rules! test_file {
     ($path:expr) => {{
         use super::*;
 
-        let demo = std::fs::read_to_string($path).unwrap();
-        let file = PBXProjectParser::parse(Rule::file, &demo);
+        let file = PBXProjectParser::try_parse_from_file($path);
         if file.is_err() {
             println!("Error: {:#?}", file.as_ref().unwrap_err())
         }
@@ -163,43 +162,4 @@ mod parse_tests {
     }
 
     test_samples![demo1, demo2, demo3, demo4, demo5, demo6, demo7, demo8, demo9];
-}
-
-#[cfg(test)]
-mod consume {
-    use super::*;
-    use pest_consume::Parser;
-
-    #[test]
-    fn parse_key_pair() {
-        let str =
-            "0EC07ACE89150EC90442393B = {isa = PBXBuildFile; fileRef = F2E640B5C2B85914F6801498; };";
-        let (key, value) = PBXProjectParser::parse(Rule::field, str)
-            .map(|n| PBXProjectParser::field(n.single().unwrap()))
-            .unwrap()
-            .unwrap();
-
-        assert_eq!(key, "0EC07ACE89150EC90442393B");
-        assert!(matches!(value, PBXValue::Object(_)));
-
-        let object = value.try_into_object().unwrap();
-        assert_eq!(
-            object.get("isa"),
-            Some(&PBXValue::Kind("PBXBuildFile".into()))
-        );
-        assert_eq!(
-            object["file_ref"],
-            PBXValue::String("F2E640B5C2B85914F6801498".into())
-        );
-    }
-
-    #[test]
-    #[ignore = "reason"]
-    fn test_consume() {
-        let demo = include_str!("../../../tests/samples/demo2.pbxproj");
-        let inputs = PBXProjectParser::parse(Rule::file, demo).unwrap();
-        let input = inputs.single().unwrap();
-        let object = PBXProjectParser::file(input).unwrap();
-        println!("{object:#?}");
-    }
 }

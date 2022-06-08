@@ -1,9 +1,12 @@
-use super::PBXHashMap;
+use super::{PBXHashMap, PBXObject};
 use anyhow::Result;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 use tap::Pipe;
 
-/// Result of Parsing *.pbxproj
+/// `Main` Representation of project.pbxproj file
 #[derive(Debug, derive_new::new)]
 pub struct PBXRootObject {
     /// archiveVersion
@@ -13,7 +16,7 @@ pub struct PBXRootObject {
     /// classes
     classes: PBXHashMap,
     /// Objects
-    objects: PBXHashMap,
+    objects: HashMap<String, PBXObject>,
     /// rootObjectReference
     root_object_reference: String,
 }
@@ -42,6 +45,28 @@ impl PBXRootObject {
     pub fn root_object_reference(&self) -> &str {
         self.root_object_reference.as_ref()
     }
+
+    /// Get a reference to the pbxproject data's objects.
+    // #[must_use]
+    pub fn objects(&self) -> &HashMap<String, PBXObject> {
+        &self.objects
+    }
+
+    /// Get a mutable reference to the pbxproject data's objects.
+    // #[must_use]
+    pub fn objects_mut(&mut self) -> &mut HashMap<String, PBXObject> {
+        &mut self.objects
+    }
+
+    /// Get object by reference.
+    pub fn get_object(&self, reference: &str) -> Option<&PBXObject> {
+        self.objects.get(reference)
+    }
+
+    /// Get mutable object by reference.
+    pub fn get_mut_object(&mut self, reference: &str) -> Option<&mut PBXObject> {
+        self.objects.get_mut(reference)
+    }
 }
 
 impl TryFrom<PBXHashMap> for PBXRootObject {
@@ -57,7 +82,13 @@ impl TryFrom<PBXHashMap> for PBXRootObject {
             archive_version,
             object_version,
             classes,
-            objects,
+            objects: objects
+                .0
+                .into_iter()
+                .map(|(k, v)| anyhow::Ok((k, PBXObject::try_from(v)?)))
+                .flatten()
+                .collect::<HashMap<_, _>>(),
+
             root_object_reference,
         })
     }
@@ -96,33 +127,11 @@ impl TryFrom<PathBuf> for PBXRootObject {
         Self::try_from(value.as_path())
     }
 }
+
 #[test]
 #[ignore = "check_output"]
 fn test_parse() {
     let test_content = include_str!("../../tests/samples/demo1.pbxproj");
     let project = PBXRootObject::try_from(test_content).unwrap();
     println!("{project:#?}");
-}
-
-#[test]
-fn test_extract_string() {
-    let test_content = include_str!("../../tests/samples/demo1.pbxproj");
-    let project = PBXRootObject::try_from(test_content).unwrap();
-    // let development_region = project.extract_string("development_region");
-    // assert_eq!(Some(&String::from("en")), development_region);
-}
-#[test]
-fn test_extract_value() {
-    let test_content = include_str!("../../tests/samples/demo2.pbxproj");
-    let project = PBXRootObject::try_from(test_content).unwrap();
-    // let has_scanned_for_encodings = project.extract_value("has_scanned_for_encodings");
-    // let targets = project.extract_value("targets");
-    // assert_eq!(Some(&PBXValue::Number(0)), has_scanned_for_encodings);
-    // assert_eq!(
-    //     Some(&PBXValue::Array(vec![
-    //         PBXValue::String("A0D495491ADE8368000B98EC".into()),
-    //         PBXValue::String("8EF0E26B1B340CF900CF1FCC".into())
-    //     ])),
-    //     targets
-    // )
 }
