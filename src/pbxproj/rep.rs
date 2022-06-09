@@ -1,8 +1,10 @@
 use super::{PBXHashMap, PBXObject, PBXObjectCollection};
 use anyhow::Result;
 use std::{
+    cell::RefCell,
     collections::HashMap,
     path::{Path, PathBuf},
+    rc::Rc,
 };
 use tap::Pipe;
 
@@ -17,7 +19,7 @@ pub struct PBXRootObject {
     classes: PBXHashMap,
     /// Objects
     #[deref]
-    objects: PBXObjectCollection,
+    objects: Rc<RefCell<PBXObjectCollection>>,
     /// rootObjectReference
     root_object_reference: String,
 }
@@ -55,20 +57,22 @@ impl TryFrom<PBXHashMap> for PBXRootObject {
         let object_version = map.try_remove_number("objectVersion")? as u8;
         let classes = map.try_remove_object("classes").unwrap_or_default();
         let root_object_reference = map.try_remove_string("rootObject")?;
-        let objects = map.try_remove_object("objects")?;
+        let refcell = Rc::new(RefCell::new(PBXObjectCollection::default()));
+        let objects = map
+            .try_remove_object("objects")?
+            .0
+            .into_iter()
+            .map(|(k, v)| anyhow::Ok((k, PBXObject::new(v, Rc::downgrade(&refcell))?)))
+            .flatten()
+            .collect::<HashMap<_, _>>();
+
+        refcell.borrow_mut().set_inner(objects);
 
         Ok(Self {
             archive_version,
             object_version,
             classes,
-            objects: objects
-                .0
-                .into_iter()
-                .map(|(k, v)| anyhow::Ok((k, PBXObject::try_from(v)?)))
-                .flatten()
-                .collect::<HashMap<_, _>>()
-                .pipe(PBXObjectCollection::new),
-
+            objects: refcell,
             root_object_reference,
         })
     }

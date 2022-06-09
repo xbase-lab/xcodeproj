@@ -1,6 +1,4 @@
-use crate::pbxproj::{PBXHashMap, PBXRootObject};
-
-use super::PBXFileSourceTree;
+use crate::pbxproj::*;
 
 /// `Abstraction` of file and group elements
 ///
@@ -29,12 +27,14 @@ pub struct PBXFileElement {
     pub wraps_lines: Option<bool>,
     /// Element parent.
     pub(crate) parent_reference: Option<String>,
+    objects: WeakPBXObjectCollection,
 }
 
-impl TryFrom<PBXHashMap> for PBXFileElement {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXFileElement {
+    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             source_tree: value.remove_string("sourceTree").map(|s| s.into()),
             path: value.remove_string("path"),
@@ -45,7 +45,12 @@ impl TryFrom<PBXHashMap> for PBXFileElement {
             tab_width: value.remove_number("tabWidth"),
             wraps_lines: value.remove_number("wrapsLines").map(|v| v == 1),
             parent_reference: None,
+            objects,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }
 

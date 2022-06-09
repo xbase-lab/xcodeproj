@@ -1,5 +1,4 @@
-use super::PBXFileElement;
-use crate::pbxproj::PBXHashMap;
+use crate::pbxproj::*;
 
 /// [`PBXObject`] poitning to an external file referenced by the project
 ///
@@ -24,10 +23,11 @@ pub struct PBXFileReference {
     inner: PBXFileElement,
 }
 
-impl TryFrom<PBXHashMap> for PBXFileReference {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXFileReference {
+    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             file_encoding: value.remove_number("fileEncoding"),
             explicit_file_type: value.remove_string("explicitFileType"),
@@ -39,7 +39,11 @@ impl TryFrom<PBXHashMap> for PBXFileReference {
                 .remove_string("xcLanguageSpecificationIdentifier"),
             plist_structure_definition_identifier: value
                 .remove_string("xcLanguageSpecificationIdentifier"),
-            inner: value.try_into()?,
+            inner: PBXFileElement::from_hashmap(value, objects)?,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

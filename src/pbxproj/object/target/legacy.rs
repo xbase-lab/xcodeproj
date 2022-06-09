@@ -18,10 +18,14 @@ pub struct PBXLegacyTarget {
     pub(crate) inner: PBXTarget,
 }
 
-impl TryFrom<PBXHashMap> for PBXLegacyTarget {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXLegacyTarget {
+    fn from_hashmap(
+        mut value: PBXHashMap,
+        objects: Weak<RefCell<PBXObjectCollection>>,
+    ) -> Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             build_tool_path: value.remove_string("buildToolPath"),
             build_arguments_string: value.remove_string("buildArgumentsString"),
@@ -29,7 +33,11 @@ impl TryFrom<PBXHashMap> for PBXLegacyTarget {
                 .remove_number("passBuildSettingsInEnvironment")
                 .unwrap_or_default() as u8,
             build_working_directory: value.remove_string("buildWorkingDirectory"),
-            inner: PBXTarget::try_from(value)?,
+            inner: PBXObjectExt::from_hashmap(value, objects)?,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

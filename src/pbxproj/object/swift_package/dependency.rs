@@ -1,8 +1,5 @@
+use crate::pbxproj::*;
 use std::collections::HashMap;
-
-use crate::pbxproj::{PBXHashMap, PBXObject};
-
-use super::XCRemoteSwiftPackageReference;
 
 /// [`PBXObject`] represents swift package dependency
 ///
@@ -13,6 +10,7 @@ pub struct XCSwiftPackageProductDependency {
     pub product_name: String,
     /// Package reference.
     package_reference: Option<String>,
+    objects: WeakPBXObjectCollection,
 }
 
 impl XCSwiftPackageProductDependency {
@@ -37,13 +35,19 @@ impl XCSwiftPackageProductDependency {
     }
 }
 
-impl TryFrom<PBXHashMap> for XCSwiftPackageProductDependency {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for XCSwiftPackageProductDependency {
+    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             product_name: value.try_remove_string("productName")?,
             package_reference: value.remove_string("package"),
+            objects,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

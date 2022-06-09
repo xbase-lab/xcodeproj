@@ -1,4 +1,8 @@
 mod dependency;
+use crate::pbxproj::WeakPBXObjectCollection;
+use std::{cell::RefCell, rc::Weak};
+
+use anyhow::Result;
 pub use dependency::*;
 mod aggregated;
 pub use aggregated::*;
@@ -7,7 +11,7 @@ pub use legacy::*;
 mod native;
 pub use native::*;
 
-use super::product_type::PBXProductType;
+use super::{product_type::PBXProductType, PBXObjectCollection, PBXObjectExt};
 use crate::pbxproj::{PBXHashMap, PBXRootObject};
 
 /// `Abstraction` for building a specific targets (a library, binary, or test).
@@ -33,6 +37,7 @@ pub struct PBXTarget {
     pub(crate) product_reference: Option<String>,
     /// Swift package product references.
     pub(crate) package_product_dependency_references: Vec<String>,
+    objects: WeakPBXObjectCollection,
 }
 
 impl PBXTarget {
@@ -82,9 +87,11 @@ impl PBXTarget {
     }
 }
 
-impl TryFrom<PBXHashMap> for PBXTarget {
-    type Error = anyhow::Error;
-    fn try_from(mut value: PBXHashMap) -> anyhow::Result<Self> {
+impl PBXObjectExt for PBXTarget {
+    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             name: value.remove_string("name"),
             product_name: value.remove_string("productName"),
@@ -110,6 +117,11 @@ impl TryFrom<PBXHashMap> for PBXTarget {
                 .map(|v| v.try_into_vec_strings().ok())
                 .flatten()
                 .unwrap_or_default(),
+            objects,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

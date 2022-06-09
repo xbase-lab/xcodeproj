@@ -1,5 +1,4 @@
-use super::XCVersionRequirement;
-use crate::pbxproj::PBXHashMap;
+use crate::pbxproj::*;
 
 /// [`PBXObject`] for remote [`XCSwiftPackageProductDependency`]
 ///
@@ -11,6 +10,7 @@ pub struct XCRemoteSwiftPackageReference {
     pub repository_url: Option<String>,
     /// Version rules.
     pub version_requirement: Option<XCVersionRequirement>,
+    objects: WeakPBXObjectCollection,
 }
 
 impl XCRemoteSwiftPackageReference {
@@ -29,10 +29,11 @@ impl XCRemoteSwiftPackageReference {
     }
 }
 
-impl TryFrom<PBXHashMap> for XCRemoteSwiftPackageReference {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for XCRemoteSwiftPackageReference {
+    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             repository_url: value
                 .remove_value("repositoryURL")
@@ -42,6 +43,11 @@ impl TryFrom<PBXHashMap> for XCRemoteSwiftPackageReference {
                 .remove_value("requirement")
                 .map(|v| v.try_into().ok())
                 .flatten(),
+            objects,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

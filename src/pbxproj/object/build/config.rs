@@ -1,4 +1,5 @@
-use crate::pbxproj::{PBXHashMap, PBXRootObject};
+use crate::pbxproj::{PBXHashMap, PBXObjectCollection, PBXObjectExt, PBXRootObject};
+use std::{cell::RefCell, rc::Weak};
 
 /// [`PBXObject`] specifying build configurations
 ///
@@ -11,6 +12,7 @@ pub struct XCBuildConfiguration {
     pub build_settings: PBXHashMap,
     /// Base xcconfig file reference.
     base_configuration_reference: Option<String>,
+    objects: Weak<RefCell<PBXObjectCollection>>,
 }
 
 impl XCBuildConfiguration {
@@ -27,14 +29,23 @@ impl XCBuildConfiguration {
     }
 }
 
-impl TryFrom<PBXHashMap> for XCBuildConfiguration {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for XCBuildConfiguration {
+    fn from_hashmap(
+        mut value: PBXHashMap,
+        objects: Weak<RefCell<PBXObjectCollection>>,
+    ) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             name: value.try_remove_string("name")?,
             build_settings: value.try_remove_object("buildSettings")?,
             base_configuration_reference: value.remove_string("base_configuration_reference"),
+            objects,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

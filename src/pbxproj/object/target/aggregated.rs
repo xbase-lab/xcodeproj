@@ -10,12 +10,17 @@ pub struct PBXAggregateTarget {
     pub(crate) inner: PBXTarget,
 }
 
-impl TryFrom<PBXHashMap> for PBXAggregateTarget {
-    type Error = anyhow::Error;
-
-    fn try_from(value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXAggregateTarget {
+    fn from_hashmap(value: PBXHashMap, objects: Weak<RefCell<PBXObjectCollection>>) -> Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
-            inner: PBXTarget::try_from(value)?,
+            inner: PBXObjectExt::from_hashmap(value, objects)?,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

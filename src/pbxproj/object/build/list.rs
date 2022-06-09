@@ -1,5 +1,4 @@
-use super::XCBuildConfiguration;
-use crate::pbxproj::{PBXHashMap, PBXObject, PBXRootObject};
+use crate::pbxproj::*;
 
 /// [`PBXObject`] aggregating a list of [`XCBuildConfiguration`] references
 ///
@@ -12,6 +11,7 @@ pub struct XCConfigurationList {
     pub default_configuration_is_visible: bool,
     /// Element default configuration name
     pub default_configuration_name: Option<String>,
+    objects: WeakPBXObjectCollection,
 }
 
 impl XCConfigurationList {
@@ -22,49 +22,46 @@ impl XCConfigurationList {
     }
 
     /// Build configurations
-    pub fn get_build_configurations<'a>(
-        &'a self,
-        data: &'a PBXRootObject,
-    ) -> Vec<&'a XCBuildConfiguration> {
-        self.build_configuration_references
-            .iter()
-            .map(|r| Some(data.get(r)?.as_xc_build_configuration()?))
-            .flatten()
-            .collect()
-    }
+    // pub fn get_build_configurations<'a>(
+    //     &'a self,
+    //     data: &'a PBXRootObject,
+    // ) -> Vec<&'a XCBuildConfiguration> {
+    //     self.build_configuration_references
+    //         .iter()
+    //         .map(|r| Some(data.get(r)?.borrow().as_xc_build_configuration()?))
+    //         .flatten()
+    //         .collect()
+    // }
 
     /// Returns the build configuration with the given name (if it exists)
-    pub fn get_configuration_by_name<'a>(
-        &'a self,
-        data: &'a PBXRootObject,
-        name: &'a str,
-    ) -> Option<&'a XCBuildConfiguration> {
-        self.get_build_configurations(data)
-            .into_iter()
-            .find(|o| &o.name == name)
-    }
+    // pub fn get_configuration_by_name<'a>(
+    //     &'a self,
+    //     data: &'a PBXRootObject,
+    //     name: &'a str,
+    // ) -> Option<&'a XCBuildConfiguration> {
+    //     self.get_build_configurations(data)
+    //         .into_iter()
+    //         .find(|o| &o.name == name)
+    // }
 
     /// Adds the default configurations, debug and release
-    pub fn add_default_configurations(&mut self, data: &mut PBXRootObject) {
-        let mut configurations = vec![];
-        let debug = XCBuildConfiguration::new("Debug".into(), Default::default(), None);
-        let debug_id = uuid::Uuid::new_v4().to_string();
-        data.insert(debug_id.clone(), PBXObject::XCBuildConfiguration(debug));
+    // pub fn add_default_configurations(&mut self, data: &mut PBXRootObject) {
+    //     let mut configurations = vec![];
+    //     let debug = XCBuildConfiguration::new("Debug".into(), Default::default(), None);
+    //     let debug_id = data.push(debug);
 
-        configurations.push(debug_id);
+    //     configurations.push(debug_id);
 
-        let release = XCBuildConfiguration::new("Release".into(), Default::default(), None);
-        let release_id = uuid::Uuid::new_v4().to_string();
+    //     let release = XCBuildConfiguration::new("Release".into(), Default::default(), None);
+    //     let release_id = data.push(release);
 
-        data.insert(release_id.clone(), PBXObject::XCBuildConfiguration(release));
+    //     configurations.push(release_id);
 
-        configurations.push(release_id);
-
-        self.build_configuration_references.extend(configurations);
-    }
+    //     self.build_configuration_references.extend(configurations);
+    // }
 
     /// Returns the object with the given configuration list (project or target)
-    pub fn object_with_configuration_list(&self, data: &PBXRootObject) -> Option<&PBXObject> {
+    pub fn object_with_configuration_list(&self, _data: &PBXRootObject) -> Option<&PBXObject> {
         // projects, Native target, aggregateTargets, legacyTargets build_configuration_list_reference
 
         // data.iter().find(|o| {
@@ -76,10 +73,14 @@ impl XCConfigurationList {
     }
 }
 
-impl TryFrom<PBXHashMap> for XCConfigurationList {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for XCConfigurationList {
+    fn from_hashmap(
+        mut value: PBXHashMap,
+        objects: crate::pbxproj::WeakPBXObjectCollection,
+    ) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             build_configuration_references: value
                 .try_remove_vec("buildConfigurations")?
@@ -88,6 +89,11 @@ impl TryFrom<PBXHashMap> for XCConfigurationList {
                 .try_remove_number("defaultConfigurationIsVisible")?
                 == 1,
             default_configuration_name: value.remove_string("defaultConfigurationName"),
+            objects,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

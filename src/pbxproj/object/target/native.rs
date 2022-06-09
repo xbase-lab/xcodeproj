@@ -19,13 +19,21 @@ impl PBXNativeTarget {
     }
 }
 
-impl TryFrom<PBXHashMap> for PBXNativeTarget {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXNativeTarget {
+    fn from_hashmap(
+        mut value: PBXHashMap,
+        objects: Weak<RefCell<PBXObjectCollection>>,
+    ) -> Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             product_install_path: value.remove_string("productInstallPath"),
-            inner: PBXTarget::try_from(value)?,
+            inner: PBXObjectExt::from_hashmap(value, objects)?,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

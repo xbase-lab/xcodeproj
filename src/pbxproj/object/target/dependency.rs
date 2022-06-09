@@ -1,9 +1,4 @@
-use super::PBXTarget;
-use crate::pbxproj::PBXContainerItemProxy;
-use crate::pbxproj::PBXHashMap;
-use crate::pbxproj::PBXObject;
-use crate::pbxproj::PBXRootObject;
-use crate::pbxproj::XCSwiftPackageProductDependency;
+use crate::pbxproj::*;
 
 /// [`PBXObject`] referencing other targets through content proxies.
 #[derive(Debug, derive_new::new)]
@@ -19,6 +14,7 @@ pub struct PBXTargetDependency {
     target_proxy_reference: Option<String>,
     /// Product reference.
     product_reference: Option<String>,
+    objects: WeakPBXObjectCollection,
 }
 
 impl PBXTargetDependency {
@@ -54,16 +50,22 @@ impl PBXTargetDependency {
     }
 }
 
-impl TryFrom<PBXHashMap> for PBXTargetDependency {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXTargetDependency {
+    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             name: value.remove_string("name"),
             platform_filter: value.remove_string("platformFilter"),
             target_reference: value.remove_string("target"),
             target_proxy_reference: value.remove_string("targetProxy"),
             product_reference: value.remove_string("productRef"),
+            objects,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

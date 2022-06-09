@@ -6,7 +6,7 @@ pub use file::*;
 pub use kind::*;
 pub use rule::*;
 
-use crate::pbxproj::PBXHashMap;
+use crate::pbxproj::*;
 use derive_deref_rs::Deref;
 use std::collections::HashSet;
 
@@ -23,6 +23,7 @@ pub struct PBXBuildPhase {
     pub output_file_list_paths: Option<Vec<String>>,
     /// Element run only for deployment post processing value.
     pub run_only_for_deployment_postprocessing: bool,
+    objects: WeakPBXObjectCollection,
 }
 
 impl PBXBuildPhase {
@@ -50,10 +51,11 @@ impl PBXBuildPhase {
     }
 }
 
-impl TryFrom<PBXHashMap> for PBXBuildPhase {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXBuildPhase {
+    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             build_action_mask: value
                 .try_remove_number("buildActionMask")
@@ -75,7 +77,12 @@ impl TryFrom<PBXHashMap> for PBXBuildPhase {
                 .remove_number("runOnlyForDeploymentPostprocessing")
                 .map(|v| v == 1)
                 .unwrap_or_default(),
+            objects,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }
 
@@ -96,13 +103,18 @@ impl PBXCopyFilesBuildPhase {
     }
 }
 
-impl TryFrom<PBXHashMap> for PBXCopyFilesBuildPhase {
-    type Error = anyhow::Error;
-
-    fn try_from(value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXCopyFilesBuildPhase {
+    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
-            inner: TryFrom::try_from(value)?,
+            inner: PBXObjectExt::from_hashmap(value, objects)?,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }
 
@@ -124,15 +136,21 @@ impl PBXFrameworksBuildPhase {
     }
 }
 
-impl TryFrom<PBXHashMap> for PBXFrameworksBuildPhase {
-    type Error = anyhow::Error;
-
-    fn try_from(value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXFrameworksBuildPhase {
+    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
-            inner: TryFrom::try_from(value)?,
+            inner: PBXObjectExt::from_hashmap(value, objects)?,
         })
     }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
+    }
 }
+
 /// [`PBXObject`] specifying [`PBXBuildPhase`] for header linking phase
 ///
 /// [`PBXObject`]: crate::pbxproj::PBXObject
@@ -146,13 +164,18 @@ impl PBXHeadersBuildPhase {
     pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::Headers;
 }
 
-impl TryFrom<PBXHashMap> for PBXHeadersBuildPhase {
-    type Error = anyhow::Error;
-
-    fn try_from(value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXHeadersBuildPhase {
+    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
-            inner: TryFrom::try_from(value)?,
+            inner: PBXObjectExt::from_hashmap(value, objects)?,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }
 
@@ -169,13 +192,18 @@ impl PBXResourcesBuildPhase {
     pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::Resources;
 }
 
-impl TryFrom<PBXHashMap> for PBXResourcesBuildPhase {
-    type Error = anyhow::Error;
-
-    fn try_from(value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXResourcesBuildPhase {
+    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
-            inner: TryFrom::try_from(value)?,
+            inner: PBXObjectExt::from_hashmap(value, objects)?,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }
 
@@ -192,13 +220,18 @@ impl PBXRezBuildPhase {
     pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::CarbonResources;
 }
 
-impl TryFrom<PBXHashMap> for PBXRezBuildPhase {
-    type Error = anyhow::Error;
-
-    fn try_from(value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXRezBuildPhase {
+    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
-            inner: TryFrom::try_from(value)?,
+            inner: PBXObjectExt::from_hashmap(value, objects)?,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }
 
@@ -215,13 +248,18 @@ impl PBXSourcesBuildPhase {
     pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::Sources;
 }
 
-impl TryFrom<PBXHashMap> for PBXSourcesBuildPhase {
-    type Error = anyhow::Error;
-
-    fn try_from(value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXSourcesBuildPhase {
+    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
-            inner: TryFrom::try_from(value)?,
+            inner: PBXObjectExt::from_hashmap(value, objects)?,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }
 
@@ -255,10 +293,11 @@ impl PBXShellScriptBuildPhase {
     pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::RunScript;
 }
 
-impl TryFrom<PBXHashMap> for PBXShellScriptBuildPhase {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXShellScriptBuildPhase {
+    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             name: value.remove_string("name"),
             input_paths: value.try_remove_vec("inputPaths")?.try_into_vec_strings()?,
@@ -276,7 +315,11 @@ impl TryFrom<PBXHashMap> for PBXShellScriptBuildPhase {
                 .map(|v| v == 1)
                 .unwrap_or_else(|| false),
             dependency_file: value.remove_string("dependencyFile"),
-            inner: TryFrom::try_from(value)?,
+            inner: PBXObjectExt::from_hashmap(value, objects)?,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

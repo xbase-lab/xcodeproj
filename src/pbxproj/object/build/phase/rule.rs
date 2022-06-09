@@ -1,4 +1,4 @@
-use crate::pbxproj::PBXHashMap;
+use crate::pbxproj::*;
 
 /// [`PBXObject`] specifying how to transform input file(s) to an output file(s).
 ///
@@ -25,12 +25,14 @@ pub struct PBXBuildRule {
     pub script: Option<String>,
     /// Element run once per architecture.
     pub run_once_per_architecture: Option<bool>,
+    objects: WeakPBXObjectCollection,
 }
 
-impl TryFrom<PBXHashMap> for PBXBuildRule {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXBuildRule {
+    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             compiler_spec: value.remove_string("compilerSpec"),
             file_patterns: value.remove_string("filePatterns"),
@@ -53,6 +55,11 @@ impl TryFrom<PBXHashMap> for PBXBuildRule {
             run_once_per_architecture: value
                 .remove_number("runOncePerArchitecture")
                 .map(|n| n == 1),
+            objects,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }

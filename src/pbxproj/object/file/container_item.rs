@@ -1,4 +1,4 @@
-use crate::pbxproj::{PBXHashMap, PBXValue};
+use crate::pbxproj::*;
 
 /// Item Proxy type used in [`PBXContainerItemProxy`]
 #[derive(Debug)]
@@ -37,12 +37,14 @@ pub struct PBXContainerItemProxy {
     remote_global_id_reference: Option<String>,
     /// Element remote info.
     pub remote_info: Option<String>,
+    objects: WeakPBXObjectCollection,
 }
 
-impl TryFrom<PBXHashMap> for PBXContainerItemProxy {
-    type Error = anyhow::Error;
-
-    fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
+impl PBXObjectExt for PBXContainerItemProxy {
+    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         Ok(Self {
             container_portal_reference: value.try_remove_string("containerPortal")?,
             proxy_type: value
@@ -51,6 +53,11 @@ impl TryFrom<PBXHashMap> for PBXContainerItemProxy {
                 .flatten(),
             remote_global_id_reference: value.remove_string("remoteGlobalIdString"),
             remote_info: value.remove_string("remoteInfo"),
+            objects,
         })
+    }
+
+    fn to_hashmap(&self) -> PBXHashMap {
+        todo!()
     }
 }
