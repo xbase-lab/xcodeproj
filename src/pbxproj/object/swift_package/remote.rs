@@ -35,7 +35,7 @@ impl TryFrom<PBXHashMap> for XCRemoteSwiftPackageReference {
     fn try_from(mut value: PBXHashMap) -> Result<Self, Self::Error> {
         Ok(Self {
             repository_url: value
-                .remove_value("repository_url")
+                .remove_value("repositoryURL")
                 .map(|v| v.try_into().ok())
                 .flatten(),
             version_requirement: value
