@@ -1,7 +1,8 @@
+use derive_is_enum_variant::is_enum_variant;
 use tap::Pipe;
 
 /// Enum that encapsulates all kind of build phases available in Xcode.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, is_enum_variant)]
 pub enum PBXBuildPhaseKind {
     /// Sources
     Sources,
@@ -17,6 +18,21 @@ pub enum PBXBuildPhaseKind {
     Headers,
     /// Build Legacy Carbon Resources
     CarbonResources,
+}
+
+impl PBXBuildPhaseKind {
+    /// Return string represntation of PBXBuildPhaseKind
+    pub fn as_isa(&self) -> &str {
+        match self {
+            Self::Headers => "PBXHeadersBuildPhase",
+            Self::Frameworks => "PBXFrameworksBuildPhase",
+            Self::Resources => "PBXResourcesBuildPhase",
+            Self::RunScript => "PBXShellScriptBuildPhase",
+            Self::Sources => "PBXSourcesBuildPhase",
+            Self::CopyFiles => "PBXCopyFilesBuildPhase",
+            Self::CarbonResources => "PBXRezBuildPhase",
+        }
+    }
 }
 
 impl ToString for PBXBuildPhaseKind {

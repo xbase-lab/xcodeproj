@@ -96,7 +96,10 @@ impl PBXObjectExt for PBXTarget {
     where
         Self: Sized,
     {
-        let kind = value.try_remove_kind("isa")?.try_into_pbxtarget().unwrap();
+        let kind = value
+            .try_remove_kind("isa")?
+            .try_into_target_kind()
+            .unwrap();
 
         Ok(Self {
             name: value.remove_string("name"),

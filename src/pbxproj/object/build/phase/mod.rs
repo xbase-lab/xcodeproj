@@ -1,13 +1,14 @@
 mod file;
 mod kind;
 mod rule;
+mod script;
 
 pub use file::*;
 pub use kind::*;
 pub use rule::*;
+pub use script::*;
 
 use crate::pbxproj::*;
-use derive_deref_rs::Deref;
 use std::collections::HashSet;
 
 /// `Abstraction` of build phase variants.
@@ -16,13 +17,16 @@ pub struct PBXBuildPhase {
     /// Element build action mask.
     pub build_action_mask: isize,
     /// References to build files.
-    file_references: Option<HashSet<String>>,
+    pub file_references: Option<HashSet<String>>,
     /// Paths to the input file lists.
     pub input_file_list_paths: Option<Vec<String>>,
     /// Paths to the output file lists.
     pub output_file_list_paths: Option<Vec<String>>,
     /// Element run only for deployment post processing value.
     pub run_only_for_deployment_postprocessing: bool,
+    // ----
+    kind: PBXBuildPhaseKind,
+    inner: Option<PBXShellScriptBuildPhase>,
     objects: WeakPBXObjectCollection,
 }
 
@@ -56,6 +60,11 @@ impl PBXObjectExt for PBXBuildPhase {
     where
         Self: Sized,
     {
+        let kind = value
+            .try_remove_kind("isa")?
+            .try_into_build_phase_kind()
+            .unwrap();
+
         Ok(Self {
             build_action_mask: value
                 .try_remove_number("buildActionMask")
@@ -78,6 +87,12 @@ impl PBXObjectExt for PBXBuildPhase {
                 .map(|v| v == 1)
                 .unwrap_or_default(),
             objects,
+            inner: if kind.is_run_script() {
+                Some(PBXObjectExt::from_hashmap(value, Default::default())?)
+            } else {
+                None
+            },
+            kind,
         })
     }
 
@@ -86,240 +101,49 @@ impl PBXObjectExt for PBXBuildPhase {
     }
 }
 
-/// [`PBXObject`] specifying [`PBXBuildPhase`] for copy file build phase
-///
-/// [`PBXObject`]: crate::pbxproj::PBXObject
-#[derive(Debug, Deref)]
-pub struct PBXCopyFilesBuildPhase {
-    inner: PBXBuildPhase,
-}
-
-impl PBXCopyFilesBuildPhase {
-    /// Static reference representing build phase kind
-    pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::CopyFiles;
-    /// Create Copy files Build Phase
-    pub fn new(inner: PBXBuildPhase) -> Self {
-        Self { inner }
-    }
-}
-
-impl PBXObjectExt for PBXCopyFilesBuildPhase {
-    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        Ok(Self {
-            inner: PBXObjectExt::from_hashmap(value, objects)?,
-        })
+impl PBXBuildPhase {
+    /// Get inner script representation
+    pub fn get_inner(&self) -> Option<&PBXShellScriptBuildPhase> {
+        self.inner.as_ref()
     }
 
-    fn to_hashmap(&self) -> PBXHashMap {
-        todo!()
-    }
-}
-
-/// [`PBXObject`] specifying [`PBXBuildPhase`] for frameworks linking phase
-///
-/// [`PBXObject`]: crate::pbxproj::PBXObject
-#[derive(Debug, Deref, derive_new::new)]
-pub struct PBXFrameworksBuildPhase {
-    inner: PBXBuildPhase,
-}
-
-impl PBXFrameworksBuildPhase {
-    /// Static reference representing build phase kind
-    pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::Frameworks;
-
-    /// Return [`Self::KIND`]
-    pub fn kind(&self) -> PBXBuildPhaseKind {
-        return Self::KIND;
-    }
-}
-
-impl PBXObjectExt for PBXFrameworksBuildPhase {
-    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        Ok(Self {
-            inner: PBXObjectExt::from_hashmap(value, objects)?,
-        })
+    /// Get mutable inner script representation
+    pub fn get_inner_mut(&mut self) -> Option<&mut PBXShellScriptBuildPhase> {
+        self.inner.as_mut()
     }
 
-    fn to_hashmap(&self) -> PBXHashMap {
-        todo!()
-    }
-}
-
-/// [`PBXObject`] specifying [`PBXBuildPhase`] for header linking phase
-///
-/// [`PBXObject`]: crate::pbxproj::PBXObject
-#[derive(Debug, Deref, derive_new::new)]
-pub struct PBXHeadersBuildPhase {
-    inner: PBXBuildPhase,
-}
-
-impl PBXHeadersBuildPhase {
-    /// Static reference representing build phase kind
-    pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::Headers;
-}
-
-impl PBXObjectExt for PBXHeadersBuildPhase {
-    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        Ok(Self {
-            inner: PBXObjectExt::from_hashmap(value, objects)?,
-        })
+    /// Whether build phase is PBXSourcesBuildPhase
+    pub fn is_sources(&self) -> bool {
+        self.kind.is_sources()
     }
 
-    fn to_hashmap(&self) -> PBXHashMap {
-        todo!()
-    }
-}
-
-#[derive(Debug, Deref, derive_new::new)]
-/// [`PBXObject`] specifying [`PBXBuildPhase`] for resouces linking phase
-///
-/// [`PBXObject`]: crate::pbxproj::PBXObject
-pub struct PBXResourcesBuildPhase {
-    inner: PBXBuildPhase,
-}
-
-impl PBXResourcesBuildPhase {
-    /// Static reference representing build phase kind
-    pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::Resources;
-}
-
-impl PBXObjectExt for PBXResourcesBuildPhase {
-    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        Ok(Self {
-            inner: PBXObjectExt::from_hashmap(value, objects)?,
-        })
+    /// Whether build phase is PBXFrameworksBuildPhase
+    pub fn is_frameworks(&self) -> bool {
+        self.kind.is_frameworks()
     }
 
-    fn to_hashmap(&self) -> PBXHashMap {
-        todo!()
-    }
-}
-
-/// [`PBXObject`] specifying [`PBXBuildPhase`] for Carbon Resources phase
-///
-/// [`PBXObject`]: crate::pbxproj::PBXObject
-#[derive(Debug, Deref, derive_new::new)]
-pub struct PBXRezBuildPhase {
-    inner: PBXBuildPhase,
-}
-
-impl PBXRezBuildPhase {
-    /// Static reference representing build phase kind
-    pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::CarbonResources;
-}
-
-impl PBXObjectExt for PBXRezBuildPhase {
-    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        Ok(Self {
-            inner: PBXObjectExt::from_hashmap(value, objects)?,
-        })
+    /// Whether build phase is PBXResourcesBuildPhase
+    pub fn is_resources(&self) -> bool {
+        self.kind.is_resources()
     }
 
-    fn to_hashmap(&self) -> PBXHashMap {
-        todo!()
-    }
-}
-
-/// [`PBXObject`] specifying [`PBXBuildPhase`] for compilation phase
-///
-/// [`PBXObject`]: crate::pbxproj::PBXObject
-#[derive(Debug, Deref, derive_new::new)]
-pub struct PBXSourcesBuildPhase {
-    inner: PBXBuildPhase,
-}
-
-impl PBXSourcesBuildPhase {
-    /// Static reference representing build phase kind
-    pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::Sources;
-}
-
-impl PBXObjectExt for PBXSourcesBuildPhase {
-    fn from_hashmap(value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        Ok(Self {
-            inner: PBXObjectExt::from_hashmap(value, objects)?,
-        })
+    /// Whether build phase is PBXCopyFilesBuildPhase
+    pub fn is_copy_files(&self) -> bool {
+        self.kind.is_copy_files()
     }
 
-    fn to_hashmap(&self) -> PBXHashMap {
-        todo!()
-    }
-}
-
-/// [`PBXObject`] specifying [`PBXBuildPhase`] for processing scripts
-///
-/// [`PBXObject`]: crate::pbxproj::PBXObject
-#[derive(Debug, Deref, derive_new::new)]
-pub struct PBXShellScriptBuildPhase {
-    /// Build phase name.
-    pub name: Option<String>,
-    /// Input paths
-    pub input_paths: Vec<String>,
-    /// Output paths
-    pub output_paths: Vec<String>,
-    /// Path to the shell.
-    pub shell_path: Option<String>,
-    /// Shell script.
-    pub shell_script: Option<String>,
-    /// Show environment variables in the logs.
-    pub show_env_vars_in_log: bool,
-    /// Force script to run in all incremental builds.
-    pub always_out_of_date: bool,
-    /// Path to the discovery .d dependency file
-    pub dependency_file: Option<String>,
-    #[deref]
-    inner: PBXBuildPhase,
-}
-
-impl PBXShellScriptBuildPhase {
-    /// Static reference representing build phase kind
-    pub const KIND: PBXBuildPhaseKind = PBXBuildPhaseKind::RunScript;
-}
-
-impl PBXObjectExt for PBXShellScriptBuildPhase {
-    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        Ok(Self {
-            name: value.remove_string("name"),
-            input_paths: value.try_remove_vec("inputPaths")?.try_into_vec_strings()?,
-            output_paths: value
-                .try_remove_vec("outputPaths")?
-                .try_into_vec_strings()?,
-            shell_path: value.remove_string("shellPath"),
-            shell_script: value.remove_string("shellScript"),
-            show_env_vars_in_log: value
-                .remove_number("runOnlyForDeploymentPostprocessing")
-                .map(|v| v == 1)
-                .unwrap_or_else(|| true),
-            always_out_of_date: value
-                .remove_number("alwaysOutOfDate")
-                .map(|v| v == 1)
-                .unwrap_or_else(|| false),
-            dependency_file: value.remove_string("dependencyFile"),
-            inner: PBXObjectExt::from_hashmap(value, objects)?,
-        })
+    /// Whether build phase is PBXShellScriptBuildPhase
+    pub fn is_run_script(&self) -> bool {
+        self.kind.is_run_script()
     }
 
-    fn to_hashmap(&self) -> PBXHashMap {
-        todo!()
+    /// Whether build phase is PBXHeaderBuildPhase
+    pub fn is_headers(&self) -> bool {
+        self.kind.is_headers()
+    }
+
+    /// Whether build phase is PBXRezBuildPhase
+    pub fn is_carbon_resources(&self) -> bool {
+        self.kind.is_carbon_resources()
     }
 }

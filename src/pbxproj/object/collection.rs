@@ -1,7 +1,7 @@
 use super::PBXObject;
 use std::{cell::RefCell, collections::HashMap, rc::Weak};
 
-/// an alias for weak reference of [`PBXObjectCollection`]
+/// An alias for weak reference of [`PBXObjectCollection`]
 pub type WeakPBXObjectCollection = Weak<RefCell<PBXObjectCollection>>;
 
 /// [`PBXObject`] storage with convenient helper methods

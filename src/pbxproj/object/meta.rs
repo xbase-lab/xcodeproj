@@ -22,29 +22,17 @@ pub enum PBXObject {
     XCConfigurationList(Rc<RefCell<XCConfigurationList>>),
     /// A Kind representing Decoration for a target element
     PBXContainerItemProxy(Rc<RefCell<PBXContainerItemProxy>>),
-    /// A Kind representing the copy file build phase
-    PBXCopyFilesBuildPhase(Rc<RefCell<PBXCopyFilesBuildPhase>>),
     /// A Kind representing to track every external file referenced by the project: source files,
     /// resource files, libraries, generated application files, and so on.
     PBXFileReference(Rc<RefCell<PBXFileReference>>),
-    /// A Kind representing a framework link build phase
-    PBXFrameworksBuildPhase(Rc<RefCell<PBXFrameworksBuildPhase>>),
     /// A Kind representing group files
     PBXGroup(Rc<RefCell<PBXGroup>>),
-    /// A Kind representing the header link build phase
-    PBXHeadersBuildPhase(Rc<RefCell<PBXHeadersBuildPhase>>),
     /// A Kind representing a build target that produces a binary content (application or library).
     PBXProject(Rc<RefCell<PBXProject>>),
     /// A Kind representing an abstract parent for specialized targets.
     XCRemoteSwiftPackageReference(Rc<RefCell<XCRemoteSwiftPackageReference>>),
-    /// A Kind representing the resources copy build phase
-    PBXResourcesBuildPhase(Rc<RefCell<PBXResourcesBuildPhase>>),
-    /// A Kind representing the Build Carbon Resources build phase
-    PBXRezBuildPhase(Rc<RefCell<PBXRezBuildPhase>>),
     /// A Kind representing shell script build phase.
     PBXShellScriptBuildPhase(Rc<RefCell<PBXShellScriptBuildPhase>>),
-    /// A Kind representing the sources compilation build phase.
-    PBXSourcesBuildPhase(Rc<RefCell<PBXSourcesBuildPhase>>),
     /// A Kind representing an abstract parent for specialized targets.
     XCSwiftPackageProductDependency(Rc<RefCell<XCSwiftPackageProductDependency>>),
     /// A Kind representing a reference to other targets through content proxies.
@@ -75,33 +63,27 @@ impl PBXObject {
         };
 
         Ok(match kind {
-            PBXObjectKind::PBXTarget(_) => into!(PBXTarget, map, objects),
             PBXObjectKind::XCBuildConfiguration => into!(XCBuildConfiguration, map, objects),
             PBXObjectKind::PBXBuildFile => into!(PBXBuildFile, map, objects),
             PBXObjectKind::PBXBuildRule => into!(PBXBuildRule, map, objects),
             PBXObjectKind::XCConfigurationList => into!(XCConfigurationList, map, objects),
             PBXObjectKind::PBXContainerItemProxy => into!(PBXContainerItemProxy, map, objects),
-            PBXObjectKind::PBXCopyFilesBuildPhase => into!(PBXCopyFilesBuildPhase, map, objects),
             PBXObjectKind::PBXFileReference => into!(PBXFileReference, map, objects),
-            PBXObjectKind::PBXFrameworksBuildPhase => into!(PBXFrameworksBuildPhase, map, objects),
             PBXObjectKind::PBXGroup => into!(PBXGroup, map, objects),
-            PBXObjectKind::PBXHeadersBuildPhase => into!(PBXHeadersBuildPhase, map, objects),
             PBXObjectKind::PBXProject => into!(PBXProject, map, objects),
             PBXObjectKind::XCRemoteSwiftPackageReference => {
                 into!(XCRemoteSwiftPackageReference, map, objects)
             }
-            PBXObjectKind::PBXResourcesBuildPhase => into!(PBXResourcesBuildPhase, map, objects),
-            PBXObjectKind::PBXRezBuildPhase => into!(PBXRezBuildPhase, map, objects),
-            PBXObjectKind::PBXShellScriptBuildPhase => {
-                into!(PBXShellScriptBuildPhase, map, objects)
-            }
-            PBXObjectKind::PBXSourcesBuildPhase => into!(PBXSourcesBuildPhase, map, objects),
             PBXObjectKind::XCSwiftPackageProductDependency => {
                 into!(XCSwiftPackageProductDependency, map, objects)
             }
             PBXObjectKind::PBXTargetDependency => into!(PBXTargetDependency, map, objects),
             PBXObjectKind::PBXVariantGroup => into!(PBXVariantGroup, map, objects),
             PBXObjectKind::XCVersionGroup => into!(XCVersionGroup, map, objects),
+
+            PBXObjectKind::PBXTarget(_) => into!(PBXTarget, map, objects),
+
+            PBXObjectKind::PBXBuildPhase(_) => into!(PBXBuildFile, map, objects),
             kind => anyhow::bail!("{kind:?} isn't supported"),
         })
     }
