@@ -59,6 +59,13 @@ pub enum PBXObject {
     XCVersionGroup,
 }
 
+impl PBXObject {
+    /// Whether the object is a PBXTarget
+    pub fn is_pbx_target(&self) -> bool {
+        self.is_pbx_aggregate_target() || self.is_pbx_native_target() || self.is_pbx_legacy_target()
+    }
+}
+
 macro_rules! kind_to_object {
     ($kind:ident, $value:ident, [$($variant:ident),*]) => {
         match $kind {

@@ -3,7 +3,7 @@ use crate::pbxproj::{
 };
 
 /// [`PBXObject`] A File referenced by a build phase, unique to each build phase.
-#[derive(Debug, derive_new::new)]
+#[derive(Default, Debug, derive_new::new)]
 pub struct PBXBuildFile {
     /// Element settings
     pub settings: Option<PBXValue>,
@@ -24,6 +24,18 @@ impl PBXBuildFile {
         // fileReference?.getObject()
         todo!()
     }
+
+    /// Create new [`PBXBuildFile`] from  product_reference only
+    pub fn new_from_product(product_reference: String) -> Self {
+        Self {
+            settings: Default::default(),
+            platform_filter: Default::default(),
+            file_reference: Default::default(),
+            product_reference: Some(product_reference),
+            build_phase_reference: Default::default(),
+        }
+    }
+
     /// Returns the file the build file refers to.
     pub fn set_file_reference(&mut self, reference: Option<String>) -> Option<String> {
         std::mem::replace(&mut self.file_reference, reference)

@@ -43,7 +43,7 @@ impl PBXBuildPhase {
     }
 
     /// Add file_reference
-    fn add_file_reference(&mut self, reference: String) {
+    pub fn add_file_reference(&mut self, reference: String) {
         let mut file_references = self.file_references.take().unwrap_or_default();
         file_references.insert(reference);
         self.file_references = file_references.into();

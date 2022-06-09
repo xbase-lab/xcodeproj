@@ -24,9 +24,16 @@ impl XCSwiftPackageProductDependency {
         // root.get(root).map(|o| o.try_into());
         None
     }
-    /// Package the product dependency refers to.
-    pub fn set_package_reference(&mut self) -> Option<String> {
-        todo!()
+
+    /// Get a reference to the xcswift package product dependency's package reference.
+    #[must_use]
+    pub fn package_reference(&self) -> Option<&String> {
+        self.package_reference.as_ref()
+    }
+
+    /// Set the xcswift package product dependency's package reference.
+    pub fn set_package_reference(&mut self, package_reference: Option<String>) -> Option<String> {
+        std::mem::replace(&mut self.package_reference, package_reference)
     }
 }
 
