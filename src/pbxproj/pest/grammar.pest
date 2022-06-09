@@ -26,8 +26,7 @@ uuid    = @{
   (ASCII_ALPHA{1} | ASCII_DIGIT{1}) ~ ASCII_ALPHANUMERIC{23} ~ !(ASCII_ALPHA | ".")
 }
 kind    = @{
-  "PBXFileElement"
-    | "PBXBuildFile"
+     "PBXBuildFile"
     | "PBXFileReference"
     | "PBXLegacyTarget"
     | "PBXNativeTarget"
@@ -45,7 +44,6 @@ kind    = @{
     | "XCBuildConfiguration"
     | "PBXCopyFilesBuildPhase"
     | "PBXContainerItemProxy"
-    | "PBXReferenceProxy"
     | "XCVersionGroup"
     | "PBXRezBuildPhase"
     | "PBXBuildRule"

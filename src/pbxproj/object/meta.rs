@@ -10,8 +10,8 @@ use enum_variant_macros::FromVariants;
 /// PBX Object Representation
 #[derive(Clone, Debug, FromVariants, EnumAsInner, is_enum_variant)]
 pub enum PBXObject {
-    /// A Target backed by shell scripts or nothing (only specifying dependencies).
-    PBXAggregateTarget(Rc<RefCell<PBXAggregateTarget>>),
+    /// Abstraction over `PBXAggregateTarget`, `PBXLegacyTarget`, and `PBXNativeTarget`
+    PBXTarget(Rc<RefCell<PBXTarget>>),
     /// A Kind for defining build configurations
     XCBuildConfiguration(Rc<RefCell<XCBuildConfiguration>>),
     /// File referenced by a build phase, unique to each build phase.
@@ -33,10 +33,6 @@ pub enum PBXObject {
     PBXGroup(Rc<RefCell<PBXGroup>>),
     /// A Kind representing the header link build phase
     PBXHeadersBuildPhase(Rc<RefCell<PBXHeadersBuildPhase>>),
-    /// A Kind representing a build target that according to Xcode is an "External Build System".
-    PBXLegacyTarget(Rc<RefCell<PBXLegacyTarget>>),
-    /// A Kind representing a build target that produces a binary content (application or library).
-    PBXNativeTarget(Rc<RefCell<PBXNativeTarget>>),
     /// A Kind representing a build target that produces a binary content (application or library).
     PBXProject(Rc<RefCell<PBXProject>>),
     /// A Kind representing an abstract parent for specialized targets.
@@ -63,14 +59,13 @@ pub enum PBXObject {
 impl PBXObject {
     /// Create new [`PBXObject`]
     pub fn new(value: PBXValue, objects: WeakPBXObjectCollection) -> Result<Self> {
-        macro_rules! kind_to_object {
-    ($kind:ident, $objects:ident, $value:ident, [$($variant:ident),*]) => {
-        match $kind {
-            $(PBXObjectKind::$variant => PBXObject::$variant(Rc::new(RefCell::new(PBXObjectExt::from_hashmap($value, $objects)?))),)*
-                kind => anyhow::bail!("{kind:?} isn't supported")
+        macro_rules! into {
+            ($var:ident, $map:ident, $objects:ident) => {
+                PBXObject::$var(Rc::new(RefCell::new(PBXObjectExt::from_hashmap(
+                    $map, $objects,
+                )?)))
+            };
         }
-    };
-}
 
         let map = value.try_into_object()?;
         let kind = if let Some(kind) = map.get_kind("isa") {
@@ -78,41 +73,37 @@ impl PBXObject {
         } else {
             anyhow::bail!("isa field isn't defined: {map:#?}");
         };
-        Ok(kind_to_object!(
-            kind,
-            objects,
-            map,
-            [
-                PBXAggregateTarget,
-                XCBuildConfiguration,
-                PBXBuildFile,
-                PBXBuildRule,
-                XCConfigurationList,
-                PBXContainerItemProxy,
-                PBXCopyFilesBuildPhase,
-                PBXFileReference,
-                PBXFrameworksBuildPhase,
-                PBXGroup,
-                PBXHeadersBuildPhase,
-                PBXLegacyTarget,
-                PBXNativeTarget,
-                PBXProject,
-                XCRemoteSwiftPackageReference,
-                PBXResourcesBuildPhase,
-                PBXRezBuildPhase,
-                PBXShellScriptBuildPhase,
-                PBXSourcesBuildPhase,
-                XCSwiftPackageProductDependency,
-                PBXTargetDependency,
-                PBXVariantGroup,
-                XCVersionGroup
-            ]
-        ))
-    }
 
-    /// Whether the object is a PBXTarget
-    pub fn is_pbx_target(&self) -> bool {
-        self.is_pbx_aggregate_target() || self.is_pbx_native_target() || self.is_pbx_legacy_target()
+        Ok(match kind {
+            PBXObjectKind::PBXTarget(_) => into!(PBXTarget, map, objects),
+            PBXObjectKind::XCBuildConfiguration => into!(XCBuildConfiguration, map, objects),
+            PBXObjectKind::PBXBuildFile => into!(PBXBuildFile, map, objects),
+            PBXObjectKind::PBXBuildRule => into!(PBXBuildRule, map, objects),
+            PBXObjectKind::XCConfigurationList => into!(XCConfigurationList, map, objects),
+            PBXObjectKind::PBXContainerItemProxy => into!(PBXContainerItemProxy, map, objects),
+            PBXObjectKind::PBXCopyFilesBuildPhase => into!(PBXCopyFilesBuildPhase, map, objects),
+            PBXObjectKind::PBXFileReference => into!(PBXFileReference, map, objects),
+            PBXObjectKind::PBXFrameworksBuildPhase => into!(PBXFrameworksBuildPhase, map, objects),
+            PBXObjectKind::PBXGroup => into!(PBXGroup, map, objects),
+            PBXObjectKind::PBXHeadersBuildPhase => into!(PBXHeadersBuildPhase, map, objects),
+            PBXObjectKind::PBXProject => into!(PBXProject, map, objects),
+            PBXObjectKind::XCRemoteSwiftPackageReference => {
+                into!(XCRemoteSwiftPackageReference, map, objects)
+            }
+            PBXObjectKind::PBXResourcesBuildPhase => into!(PBXResourcesBuildPhase, map, objects),
+            PBXObjectKind::PBXRezBuildPhase => into!(PBXRezBuildPhase, map, objects),
+            PBXObjectKind::PBXShellScriptBuildPhase => {
+                into!(PBXShellScriptBuildPhase, map, objects)
+            }
+            PBXObjectKind::PBXSourcesBuildPhase => into!(PBXSourcesBuildPhase, map, objects),
+            PBXObjectKind::XCSwiftPackageProductDependency => {
+                into!(XCSwiftPackageProductDependency, map, objects)
+            }
+            PBXObjectKind::PBXTargetDependency => into!(PBXTargetDependency, map, objects),
+            PBXObjectKind::PBXVariantGroup => into!(PBXVariantGroup, map, objects),
+            PBXObjectKind::XCVersionGroup => into!(XCVersionGroup, map, objects),
+            kind => anyhow::bail!("{kind:?} isn't supported"),
+        })
     }
 }
 

@@ -1,4 +1,3 @@
-use super::{PBXObject, PBXObjectExt, XCRemoteSwiftPackageReference};
 use crate::pbxproj::*;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -67,7 +66,7 @@ impl PBXProject {
     /// Get targets for given reference
     /// TODO: Wrap target
     #[must_use]
-    pub fn targets(&self) -> Vec<PBXObject> {
+    pub fn targets(&self) -> Vec<Rc<RefCell<PBXTarget>>> {
         let objects = if let Some(objects) = self.objects.upgrade() {
             objects
         } else {
@@ -76,8 +75,8 @@ impl PBXProject {
         let objects = objects.borrow();
         let mut targets = vec![];
         for id in self.target_references.iter() {
-            if let Some(object) = objects.get(id) {
-                targets.push(object.clone())
+            if let Some(traget) = objects.get(id).map(|v| v.as_pbx_target()).flatten() {
+                targets.push(traget.clone())
             }
         }
         targets
