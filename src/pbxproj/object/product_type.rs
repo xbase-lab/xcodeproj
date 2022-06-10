@@ -1,7 +1,7 @@
 use tap::Pipe;
 
 /// Target Product Type
-#[derive(Default, Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, Hash, PartialEq, Eq)]
 pub enum PBXProductType {
     /// Application
     Application,
@@ -62,8 +62,13 @@ pub enum PBXProductType {
     /// SystemExtension
     SystemExtension,
     /// None Identified
-    #[default]
     None,
+}
+
+impl Default for PBXProductType {
+    fn default() -> Self {
+        Self::None
+    }
 }
 
 impl PBXProductType {
