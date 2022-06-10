@@ -46,41 +46,25 @@ pub struct PBXProject {
 impl PBXProject {
     /// Get packages that the project uses
     #[must_use]
-    pub fn packages<'a>(&self) -> Option<Vec<Rc<RefCell<XCRemoteSwiftPackageReference>>>> {
+    pub fn packages<'a>(
+        &self,
+    ) -> Option<Vec<(String, Rc<RefCell<XCRemoteSwiftPackageReference>>)>> {
         let package_references = self.package_references.as_ref()?;
         let objects = self.objects.upgrade()?;
         let objects = objects.borrow();
-        let mut packages = vec![];
-
-        for id in package_references.iter() {
-            if let Some(object) = objects
-                .get(id)
-                .map(|o| o.as_xc_remote_swift_package_reference())
-                .flatten()
-            {
-                packages.push(object.clone())
-            }
-        }
-
-        Some(packages)
+        Some(objects.get_packages_from_references(package_references))
     }
 
     /// Get targets for given reference
     #[must_use]
-    pub fn targets(&self) -> Vec<Rc<RefCell<PBXTarget>>> {
-        let objects = if let Some(objects) = self.objects.upgrade() {
-            objects
+    pub fn targets(&self) -> Vec<(String, Rc<RefCell<PBXTarget>>)> {
+        let target_references = self.target_references;
+        if let Some(objects) = self.objects.upgrade() {
+            let objects = objects.borrow();
+            objects.get_targets_from_references(&target_references)
         } else {
-            return vec![];
-        };
-        let objects = objects.borrow();
-        let mut targets = vec![];
-        for id in self.target_references.iter() {
-            if let Some(traget) = objects.get(id).map(|v| v.as_pbx_target()).flatten() {
-                targets.push(traget.clone())
-            }
+            vec![]
         }
-        targets
     }
 
     /// Returns the attributes of a given target.
