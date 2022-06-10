@@ -12,6 +12,8 @@ use enum_variant_macros::FromVariants;
 pub enum PBXObject {
     /// Abstraction over `PBXAggregateTarget`, `PBXLegacyTarget`, and `PBXNativeTarget`
     PBXTarget(Rc<RefCell<PBXTarget>>),
+    /// Abstraction over Build phases
+    PBXBuildPhase(Rc<RefCell<PBXBuildPhase>>),
     /// A Kind for defining build configurations
     XCBuildConfiguration(Rc<RefCell<XCBuildConfiguration>>),
     /// File referenced by a build phase, unique to each build phase.
@@ -31,8 +33,6 @@ pub enum PBXObject {
     PBXProject(Rc<RefCell<PBXProject>>),
     /// A Kind representing an abstract parent for specialized targets.
     XCRemoteSwiftPackageReference(Rc<RefCell<XCRemoteSwiftPackageReference>>),
-    /// A Kind representing shell script build phase.
-    PBXShellScriptBuildPhase(Rc<RefCell<PBXShellScriptBuildPhase>>),
     /// A Kind representing an abstract parent for specialized targets.
     XCSwiftPackageProductDependency(Rc<RefCell<XCSwiftPackageProductDependency>>),
     /// A Kind representing a reference to other targets through content proxies.
@@ -82,8 +82,7 @@ impl PBXObject {
             PBXObjectKind::XCVersionGroup => into!(XCVersionGroup, map, objects),
 
             PBXObjectKind::PBXTarget(_) => into!(PBXTarget, map, objects),
-
-            PBXObjectKind::PBXBuildPhase(_) => into!(PBXBuildFile, map, objects),
+            PBXObjectKind::PBXBuildPhase(_) => into!(PBXBuildPhase, map, objects),
             kind => anyhow::bail!("{kind:?} isn't supported"),
         })
     }
