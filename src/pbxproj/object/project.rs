@@ -463,6 +463,35 @@ mod tests {
             "new package should be added in object collection"
         );
     }
+
+    #[test]
+    fn test_add_swift_package_new_package() {
+        let (objects, project) = get_project("demo1");
+        let mut project = project.borrow_mut();
+        let new_package = project
+            .add_swift_package(
+                "url".into(),
+                "Log".into(),
+                XCVersionRequirement::Exact("1.4.3".into()),
+                "Wordle".into(),
+            )
+            .unwrap();
+        assert_eq!(
+            new_package,
+            project.packages().unwrap()[1].1,
+            "new package should be added to project"
+        );
+        let objects = objects.borrow();
+        let has_new_package = objects.swift_package_references().iter().any(|v| {
+            v.1.borrow()
+                .repository_url
+                .eq(&new_package.borrow().repository_url)
+        });
+        assert!(
+            has_new_package,
+            "new package should be added in object collection"
+        );
+    }
 }
 
 impl PBXObjectExt for PBXProject {
