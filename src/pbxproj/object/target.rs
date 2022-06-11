@@ -53,16 +53,10 @@ impl PBXTarget {
         self.build_configuration_list_reference = reference;
     }
 
-    /// Get build phases from data for current target
-    pub fn get_build_phases(&self, _data: &PBXRootObject) -> () {}
-
     /// Set the target's build phase references.
     pub fn set_build_phases(&mut self, references: Vec<String>) {
         self.build_phase_references = references;
     }
-
-    /// Get build phases from data for current target
-    pub fn get_build_rules(&self, _data: &PBXRootObject) -> () {}
 
     /// Set the target's build rule references.
     pub fn set_build_rule_references(&mut self, build_rule_references: Vec<String>) {
@@ -75,6 +69,11 @@ impl PBXTarget {
     /// Set the target's dependency references.
     pub fn set_target_dependency_references(&mut self, target_dependency_references: Vec<String>) {
         self.target_dependency_references = target_dependency_references;
+    }
+
+    /// Set the target's dependency references.
+    pub fn insert_package_product_dependency(&mut self, reference: String) {
+        self.target_dependency_references.push(reference)
     }
 
     /// Set the target's package product dependency references.

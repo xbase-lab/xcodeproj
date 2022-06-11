@@ -19,7 +19,7 @@ pub struct PBXRootObject {
     classes: PBXHashMap,
     /// Objects
     #[deref]
-    objects: Rc<RefCell<PBXObjectCollection>>,
+    pub(crate) objects: Rc<RefCell<PBXObjectCollection>>,
     /// rootObjectReference
     root_object_reference: String,
 }

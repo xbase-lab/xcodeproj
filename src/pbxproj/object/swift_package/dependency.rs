@@ -1,5 +1,5 @@
 use crate::pbxproj::*;
-use std::collections::HashMap;
+use std::{cell::RefCell, rc::Rc};
 
 /// [`PBXObject`] represents swift package dependency
 ///
@@ -15,12 +15,11 @@ pub struct XCSwiftPackageProductDependency {
 
 impl XCSwiftPackageProductDependency {
     /// Package the product dependency refers to.
-    pub fn get_package(
-        &self,
-        _root: &HashMap<String, PBXObject>,
-    ) -> Option<XCRemoteSwiftPackageReference> {
-        // root.get(root).map(|o| o.try_into());
-        None
+    pub fn package(&self) -> Option<Rc<RefCell<XCRemoteSwiftPackageReference>>> {
+        self.objects
+            .upgrade()?
+            .borrow()
+            .get_swift_package_reference(self.package_reference()?)
     }
 
     /// Get a reference to the xcswift package product dependency's package reference.

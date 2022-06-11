@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::pbxproj::*;
 
 /// [`PBXObject`] A File referenced by a build phase, unique to each build phase.
@@ -24,17 +26,14 @@ impl PBXBuildFile {
     }
 
     /// Create new [`PBXBuildFile`] from  product_reference only
-    pub fn new_from_product(
-        product_reference: String,
-        objects: Option<WeakPBXObjectCollection>,
-    ) -> Self {
+    pub fn new_from_swift_product(reference: String, objects: WeakPBXObjectCollection) -> Self {
         Self {
             settings: Default::default(),
             platform_filter: Default::default(),
             file_reference: Default::default(),
-            product_reference: Some(product_reference),
+            product_reference: Some(reference),
             build_phase_reference: Default::default(),
-            objects: objects.unwrap_or_default(),
+            objects,
         }
     }
 
@@ -44,9 +43,11 @@ impl PBXBuildFile {
     }
 
     /// Get Product using self.product_reference
-    pub fn get_product(&self, _data: &PBXRootObject) -> Option<XCSwiftPackageProductDependency> {
-        // productReference?.getObject()
-        todo!()
+    pub fn product(&self) -> Option<Rc<RefCell<XCSwiftPackageProductDependency>>> {
+        self.objects
+            .upgrade()?
+            .borrow()
+            .get_swift_package_product_dependency(self.product_reference.as_ref()?)
     }
 
     /// Set Product.

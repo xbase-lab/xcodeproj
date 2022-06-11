@@ -27,6 +27,12 @@ impl PBXGroup {
     //         .flatten()
     //         .collect::<Vec<_>>()
     // }
+
+    /// Get a reference to the pbxgroup's children references.
+    #[must_use]
+    pub fn children_references(&self) -> &HashSet<String> {
+        &self.children_references
+    }
 }
 
 impl PBXObjectExt for PBXGroup {
