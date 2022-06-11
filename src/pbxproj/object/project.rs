@@ -456,6 +456,7 @@ mod tests {
             "new package should be added to project"
         );
         let objects = objects.borrow();
+        println!("{:#?}", objects.build_files());
         assert_eq!(
             new_package,
             objects.swift_package_references().first().unwrap().1,

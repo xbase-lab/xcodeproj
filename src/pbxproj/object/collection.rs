@@ -1,3 +1,5 @@
+use md5::Digest;
+
 use super::*;
 use std::{
     cell::RefCell,
@@ -12,15 +14,23 @@ pub type WeakPBXObjectCollection = Weak<RefCell<PBXObjectCollection>>;
 #[derive(Default, Debug, derive_new::new, derive_deref_rs::Deref)]
 pub struct PBXObjectCollection(pub(crate) HashMap<String, PBXObject>);
 
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
+
 /// TODO: make collections a HashSet of PBXObject with identifier included?
 impl PBXObjectCollection {
-    pub(crate) fn set_inner(&mut self, map: HashMap<String, PBXObject>) {
-        self.0 = map;
-    }
-
     /// Add new object. same as insert but it auto create id and returns it
     pub fn push<O: Into<PBXObject>>(&mut self, object: O) -> String {
-        let id = uuid::Uuid::new_v4().to_string();
+        let data: String = thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(20)
+            .map(char::from)
+            .collect();
+        let mut hasher = md5::Md5::new();
+        let ref mut buf = [0u8; 128];
+        hasher.update(&data);
+        let hash = hasher.finalize();
+        let id = base16ct::upper::encode_str(&hash, buf).unwrap()[..24].to_string();
         self.insert(id.clone(), object.into());
         id
     }
@@ -175,5 +185,9 @@ impl PBXObjectCollection {
                     .map(|v| v == target_reference)
                     .unwrap_or_default()
             })
+    }
+
+    pub(crate) fn set_inner(&mut self, map: HashMap<String, PBXObject>) {
+        self.0 = map;
     }
 }
