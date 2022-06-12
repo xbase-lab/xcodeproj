@@ -239,8 +239,12 @@ impl PBXFSReference {
         let children_references = self.children_references.get_or_insert(Default::default());
 
         if !children_references.contains(&reference) {
-            children_references.insert(reference);
+            children_references.insert(reference.clone());
         };
+
+        let mut build_file = PBXBuildFile::default();
+        build_file.set_file_reference(reference.into());
+        let _reference = objects.push(file_reference.clone());
 
         Ok(file_reference)
     }
