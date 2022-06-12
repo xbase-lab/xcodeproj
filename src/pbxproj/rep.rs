@@ -1,15 +1,15 @@
 use super::{PBXHashMap, PBXObject, PBXObjectCollection};
 use anyhow::Result;
 use std::{
-    cell::RefCell,
+    cell::{Ref, RefCell, RefMut},
     collections::HashMap,
     path::{Path, PathBuf},
-    rc::Rc,
+    rc::{Rc, Weak},
 };
 use tap::Pipe;
 
 /// `Main` Representation of project.pbxproj file
-#[derive(Debug, derive_new::new, derive_deref_rs::Deref)]
+#[derive(Debug, derive_new::new)]
 pub struct PBXRootObject {
     /// archiveVersion
     archive_version: u8,
@@ -18,8 +18,7 @@ pub struct PBXRootObject {
     /// classes
     classes: PBXHashMap,
     /// Objects
-    #[deref]
-    pub(crate) objects: Rc<RefCell<PBXObjectCollection>>,
+    objects: Rc<RefCell<PBXObjectCollection>>,
     /// rootObjectReference
     root_object_reference: String,
 }
@@ -47,6 +46,24 @@ impl PBXRootObject {
     #[must_use]
     pub fn root_object_reference(&self) -> &str {
         self.root_object_reference.as_ref()
+    }
+
+    /// Get a reference to the pbxroot object's objects.
+    #[must_use]
+    pub fn objects<'a>(&'a self) -> Ref<'a, PBXObjectCollection> {
+        self.objects.borrow()
+    }
+
+    /// Get a reference to the pbxroot object's objects.
+    #[must_use]
+    pub fn objects_mut<'a>(&'a self) -> RefMut<'a, PBXObjectCollection> {
+        self.objects.borrow_mut()
+    }
+
+    /// Get a weak reference to objects.
+    #[must_use]
+    pub fn clone_objects<'a>(&'a self) -> Weak<RefCell<PBXObjectCollection>> {
+        Rc::downgrade(&self.objects)
     }
 }
 
