@@ -86,6 +86,24 @@ impl PBXObjectCollection {
         self.get_fs_references(|fs_reference| fs_reference.is_group())
     }
 
+    /// Get PBXGroup with by name or path
+    pub fn get_group_by_name_or_path<'a, S: AsRef<str>>(
+        &'a self,
+        name_or_path: S,
+    ) -> Option<(String, Rc<RefCell<PBXFSReference>>)> {
+        let name = name_or_path.as_ref();
+        self.groups().into_iter().find(|(_, o)| {
+            let group = o.borrow();
+            if let Some(n) = group.name() {
+                return n == name;
+            } else if let Some(p) = group.path() {
+                return p == name;
+            } else {
+                false
+            }
+        })
+    }
+
     /// Get all PBXProject
     pub fn projects<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXProject>>)> {
         self.iter()

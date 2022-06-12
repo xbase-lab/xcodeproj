@@ -124,6 +124,27 @@ impl PBXFSReference {
     pub fn parent(&self) -> Option<Rc<RefCell<Self>>> {
         self.parent.upgrade()
     }
+
+    /// Get File from the group
+    ///
+    /// NOTE: This will return None if self is file
+    pub fn get_file<S: AsRef<str>>(&self, name: S) -> Option<Rc<RefCell<PBXFSReference>>> {
+        let name = name.as_ref();
+        self.children().into_iter().find(|o| {
+            if !o.borrow().is_file() {
+                return false;
+            }
+            let file = o.borrow();
+
+            if let Some(n) = file.name() {
+                n == name
+            } else if let Some(p) = file.path() {
+                p == name
+            } else {
+                false
+            }
+        })
+    }
 }
 
 impl Eq for PBXFSReference {}
@@ -177,5 +198,18 @@ mod tests {
             parent.unwrap().borrow().children_references(),
             main_group.children_references()
         )
+    }
+    #[test]
+    fn get_file() {
+        use crate::pbxproj::test_demo_file;
+        let project = test_demo_file!(demo1);
+        let source_group = project
+            .objects()
+            .get_group_by_name_or_path("Source")
+            .unwrap()
+            .1;
+        let source_group = source_group.borrow();
+        let file = source_group.get_file("Log.swift");
+        assert!(file.is_some())
     }
 }
