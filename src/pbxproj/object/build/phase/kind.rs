@@ -21,7 +21,7 @@ pub enum PBXBuildPhaseKind {
 }
 
 impl PBXBuildPhaseKind {
-    /// Return string represntation of PBXBuildPhaseKind
+    /// Return string representation of PBXBuildPhaseKind
     pub fn as_isa(&self) -> &str {
         match self {
             Self::Headers => "PBXHeadersBuildPhase",

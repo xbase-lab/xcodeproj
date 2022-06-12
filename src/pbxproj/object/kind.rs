@@ -1,7 +1,7 @@
 use derive_is_enum_variant::is_enum_variant;
 use enum_as_inner::EnumAsInner;
 
-use super::PBXBuildPhaseKind;
+use super::{PBXBuildPhaseKind, PBXFSReferenceKind, PBXGroupKind};
 
 /// Representation of all Target kinds
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, is_enum_variant)]
@@ -17,12 +17,12 @@ pub enum PBXTargetKind {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, EnumAsInner)]
 /// Pbxproj object kinds
 pub enum PBXObjectKind {
-    /// A Kind representing:
+    /// An abstraction over targets, including:
     /// - PBXAggregateTarget: A build target that aggregates several others.
     /// - PBXLegacyTarget: A build target that according to Xcode is an "External Build System".
     /// - PBXNativeTarget: A  build target that produces a binary content (application or library).
     PBXTarget(PBXTargetKind),
-    /// A Kind representing:
+    /// An abstraction over build phases, including:
     /// - PBXCopyFilesBuildPhase: Copy file build phase.
     /// - PBXFrameworksBuildPhase: Framework link build phase.
     /// - PBXHeadersBuildPhase: Headers link build phase.
@@ -31,6 +31,14 @@ pub enum PBXObjectKind {
     /// - PBXShellScriptBuildPhase: Shell Script build phase.
     /// - PBXSourcesBuildPhase: A Kind representing the sources compilation build phase.
     PBXBuildPhase(PBXBuildPhaseKind),
+    /// An abstraction over PBXFileReference and PBX*Group:
+    /// - PBXFileReference: track every external file referenced by the project: source files,
+    ///   resource files, libraries, generated application files, and so on.
+    /// - PBXGroup: Files group
+    /// - XCVersionGroup: Group that contains multiple files references to the different versions
+    ///   of a resource. Used to contain the different versions of a xcdatamodel
+    /// - PBXVariantGroup: a reference localized resources.
+    PBXFSReference(PBXFSReferenceKind),
     /// A Kind for defining build configurations
     XCBuildConfiguration,
     /// A Kind indicating a file reference that is used in a BuildPhase (either as an include or resource).
@@ -41,11 +49,6 @@ pub enum PBXObjectKind {
     XCConfigurationList,
     /// A Kind representing Decoration for a target element
     PBXContainerItemProxy,
-    /// A Kind representing to track every external file referenced by the project: source files,
-    /// resource files, libraries, generated application files, and so on.
-    PBXFileReference,
-    /// A Kind representing group files
-    PBXGroup,
     /// A Kind representing a build target that produces a binary content (application or library).
     PBXProject,
     /// A Kind representing an abstract parent for specialized targets.
@@ -54,11 +57,6 @@ pub enum PBXObjectKind {
     XCSwiftPackageProductDependency,
     /// A Kind representing a reference to other targets through content proxies.
     PBXTargetDependency,
-    /// a Kind representing a reference localized resources.
-    PBXVariantGroup,
-    /// Kind representing  Group that contains multiple files references to the different versions
-    /// of a resource. Used to contain the different versions of a xcdatamodel
-    XCVersionGroup,
     /// UnknownPBXObjectKind
     Unknown(String),
 }
@@ -81,18 +79,27 @@ impl PBXObjectKind {
             Err(self)
         }
     }
+
+    /// Try get inner PBXFSReference
+    pub fn try_into_fs_reference_kind(self) -> Result<PBXFSReferenceKind, Self> {
+        if let Self::PBXFSReference(v) = self {
+            Ok(v)
+        } else {
+            Err(self)
+        }
+    }
 }
 
 impl From<&str> for PBXObjectKind {
     fn from(s: &str) -> Self {
         match s {
             "PBXBuildFile" => Self::PBXBuildFile,
-            "PBXFileReference" => Self::PBXFileReference,
+            "PBXFileReference" => Self::PBXFSReference(PBXFSReferenceKind::File),
             "PBXLegacyTarget" => Self::PBXTarget(PBXTargetKind::Legacy),
             "PBXNativeTarget" => Self::PBXTarget(PBXTargetKind::Native),
             "PBXAggregateTarget" => Self::PBXTarget(PBXTargetKind::Aggregate),
             "PBXProject" => Self::PBXProject,
-            "PBXGroup" => Self::PBXGroup,
+            "PBXGroup" => Self::PBXFSReference(PBXFSReferenceKind::Group(PBXGroupKind::FileGroup)),
             "PBXHeadersBuildPhase" => Self::PBXBuildPhase(PBXBuildPhaseKind::Headers),
             "PBXFrameworksBuildPhase" => Self::PBXBuildPhase(PBXBuildPhaseKind::Frameworks),
             "PBXResourcesBuildPhase" => Self::PBXBuildPhase(PBXBuildPhaseKind::Resources),
@@ -102,10 +109,14 @@ impl From<&str> for PBXObjectKind {
             "PBXRezBuildPhase" => Self::PBXBuildPhase(PBXBuildPhaseKind::CarbonResources),
             "XCConfigurationList" => Self::XCConfigurationList,
             "PBXTargetDependency" => Self::PBXTargetDependency,
-            "PBXVariantGroup" => Self::PBXVariantGroup,
+            "PBXVariantGroup" => {
+                Self::PBXFSReference(PBXFSReferenceKind::Group(PBXGroupKind::VariantGroup))
+            }
             "XCBuildConfiguration" => Self::XCBuildConfiguration,
             "PBXContainerItemProxy" => Self::PBXContainerItemProxy,
-            "XCVersionGroup" => Self::XCVersionGroup,
+            "XCVersionGroup" => {
+                Self::PBXFSReference(PBXFSReferenceKind::Group(PBXGroupKind::VersionGroup))
+            }
             "PBXBuildRule" => Self::PBXBuildRule,
             "XCRemoteSwiftPackageReference" => Self::XCRemoteSwiftPackageReference,
             "XCSwiftPackageProductDependency" => Self::XCSwiftPackageProductDependency,
@@ -118,18 +129,15 @@ impl ToString for PBXObjectKind {
     fn to_string(&self) -> String {
         match self {
             Self::PBXBuildFile => "PBXBuildFile",
-            Self::PBXFileReference => "PBXFileReference",
             Self::PBXProject => "PBXProject",
-            Self::PBXGroup => "PBXGroup",
             Self::XCConfigurationList => "XCConfigurationList",
             Self::PBXTargetDependency => "PBXTargetDependency",
-            Self::PBXVariantGroup => "PBXVariantGroup",
             Self::XCBuildConfiguration => "XCBuildConfiguration",
             Self::PBXContainerItemProxy => "PBXContainerItemProxy",
-            Self::XCVersionGroup => "XCVersionGroup",
             Self::PBXBuildRule => "PBXBuildRule",
             Self::XCRemoteSwiftPackageReference => "XCRemoteSwiftPackageReference",
             Self::XCSwiftPackageProductDependency => "XCSwiftPackageProductDependency",
+            Self::PBXFSReference(kind) => kind.as_isa(),
             Self::PBXTarget(kind) => match kind {
                 PBXTargetKind::Native => "PBXNativeTarget",
                 PBXTargetKind::Legacy => "PBXLegacyTarget",

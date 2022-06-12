@@ -123,28 +123,34 @@ impl PBXProject {
     }
 
     /// Get Project main group.
-    pub fn main_group(&self) -> Rc<RefCell<PBXGroup>> {
+    pub fn main_group(&self) -> Rc<RefCell<PBXFSReference>> {
         self.objects
             .upgrade()
             .expect("objects weak is invalid")
             .borrow()
             .get(&self.main_group_reference)
             .expect("PBXProject should contain mainGroup")
-            .as_pbx_group()
+            .as_pbxfs_reference()
             .expect("given reference point to PBXGroup")
             .clone()
     }
 
     /// Products Group
-    pub fn products_group(&self) -> Option<Rc<RefCell<PBXGroup>>> {
+    pub fn products_group(&self) -> Option<Rc<RefCell<PBXFSReference>>> {
         let products_group = self.products_group_reference.as_ref()?;
-        self.objects
+        let fs_reference = self
+            .objects
             .upgrade()?
             .borrow()
             .get(products_group)?
-            .as_pbx_group()?
-            .clone()
-            .pipe(Some)
+            .as_pbxfs_reference()?
+            .clone();
+
+        if fs_reference.borrow().is_group() {
+            Some(fs_reference)
+        } else {
+            None
+        }
     }
 
     /// Get attributes for a given target reference

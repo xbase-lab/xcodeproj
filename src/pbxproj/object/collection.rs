@@ -2,7 +2,7 @@ use md5::Digest;
 
 use super::*;
 use std::{
-    cell::RefCell,
+    cell::{Ref, RefCell},
     collections::HashMap,
     rc::{Rc, Weak},
 };
@@ -58,12 +58,25 @@ impl PBXObjectCollection {
             .collect()
     }
 
-    /// Get all PBXGroup
-    pub fn groups<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXGroup>>)> {
+    fn fs_references<'a>(
+        &'a self,
+        predict: fn(Ref<PBXFSReference>) -> bool,
+    ) -> Vec<(String, Rc<RefCell<PBXFSReference>>)> {
         self.iter()
-            .filter(|o| o.1.is_pbx_group())
-            .map(|(k, o)| (k.clone(), o.as_pbx_group().unwrap().clone()))
+            .filter(|o| {
+                if let Some(fs_reference) = o.1.as_pbxfs_reference() {
+                    predict(fs_reference.borrow())
+                } else {
+                    false
+                }
+            })
+            .map(|(k, o)| (k.clone(), o.as_pbxfs_reference().unwrap().clone()))
             .collect()
+    }
+
+    /// Get all PBXGroup
+    pub fn groups<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXFSReference>>)> {
+        self.fs_references(|fs_reference| fs_reference.is_group())
     }
 
     /// Get all PBXProject
@@ -75,11 +88,8 @@ impl PBXObjectCollection {
     }
 
     /// Get all files
-    pub fn files<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXFileReference>>)> {
-        self.iter()
-            .filter(|o| o.1.is_pbx_file_reference())
-            .map(|(k, o)| (k.clone(), o.as_pbx_file_reference().unwrap().clone()))
-            .collect()
+    pub fn files<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXFSReference>>)> {
+        self.fs_references(|fs_reference| fs_reference.is_file())
     }
 
     /// Get all PBXBuildFile

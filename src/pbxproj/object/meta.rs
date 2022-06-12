@@ -14,6 +14,8 @@ pub enum PBXObject {
     PBXTarget(Rc<RefCell<PBXTarget>>),
     /// Abstraction over Build phases
     PBXBuildPhase(Rc<RefCell<PBXBuildPhase>>),
+    /// Abstraction over PBXFileReference and PBX*Group
+    PBXFSReference(Rc<RefCell<PBXFSReference>>),
     /// A Kind for defining build configurations
     XCBuildConfiguration(Rc<RefCell<XCBuildConfiguration>>),
     /// File referenced by a build phase, unique to each build phase.
@@ -24,11 +26,6 @@ pub enum PBXObject {
     XCConfigurationList(Rc<RefCell<XCConfigurationList>>),
     /// A Kind representing Decoration for a target element
     PBXContainerItemProxy(Rc<RefCell<PBXContainerItemProxy>>),
-    /// A Kind representing to track every external file referenced by the project: source files,
-    /// resource files, libraries, generated application files, and so on.
-    PBXFileReference(Rc<RefCell<PBXFileReference>>),
-    /// A Kind representing group files
-    PBXGroup(Rc<RefCell<PBXGroup>>),
     /// A Kind representing a build target that produces a binary content (application or library).
     PBXProject(Rc<RefCell<PBXProject>>),
     /// A Kind representing an abstract parent for specialized targets.
@@ -37,11 +34,6 @@ pub enum PBXObject {
     XCSwiftPackageProductDependency(Rc<RefCell<XCSwiftPackageProductDependency>>),
     /// A Kind representing a reference to other targets through content proxies.
     PBXTargetDependency(Rc<RefCell<PBXTargetDependency>>),
-    /// a Kind representing a reference localized resources.
-    PBXVariantGroup(Rc<RefCell<PBXVariantGroup>>),
-    /// Kind representing  Group that contains multiple files references to the different versions
-    /// of a resource. Used to contain the different versions of a xcdatamodel
-    XCVersionGroup(Rc<RefCell<XCVersionGroup>>),
 }
 
 impl PBXObject {
@@ -68,8 +60,6 @@ impl PBXObject {
             PBXObjectKind::PBXBuildRule => into!(PBXBuildRule, map, objects),
             PBXObjectKind::XCConfigurationList => into!(XCConfigurationList, map, objects),
             PBXObjectKind::PBXContainerItemProxy => into!(PBXContainerItemProxy, map, objects),
-            PBXObjectKind::PBXFileReference => into!(PBXFileReference, map, objects),
-            PBXObjectKind::PBXGroup => into!(PBXGroup, map, objects),
             PBXObjectKind::PBXProject => into!(PBXProject, map, objects),
             PBXObjectKind::XCRemoteSwiftPackageReference => {
                 into!(XCRemoteSwiftPackageReference, map, objects)
@@ -78,8 +68,7 @@ impl PBXObject {
                 into!(XCSwiftPackageProductDependency, map, objects)
             }
             PBXObjectKind::PBXTargetDependency => into!(PBXTargetDependency, map, objects),
-            PBXObjectKind::PBXVariantGroup => into!(PBXVariantGroup, map, objects),
-            PBXObjectKind::XCVersionGroup => into!(XCVersionGroup, map, objects),
+            PBXObjectKind::PBXFSReference(_) => into!(PBXFSReference, map, objects),
 
             PBXObjectKind::PBXTarget(_) => into!(PBXTarget, map, objects),
             PBXObjectKind::PBXBuildPhase(_) => into!(PBXBuildPhase, map, objects),

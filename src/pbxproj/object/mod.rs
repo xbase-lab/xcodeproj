@@ -6,9 +6,11 @@ mod swift_package;
 mod target;
 
 mod collection;
+mod fs;
 mod kind;
 mod product_type;
 
+pub use fs::*;
 pub use kind::*;
 pub use product_type::*;
 
