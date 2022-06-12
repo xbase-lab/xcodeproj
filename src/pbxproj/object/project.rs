@@ -360,7 +360,7 @@ mod tests {
     }
 
     #[test]
-    fn test_packages() {
+    fn get_packages() {
         let (_objects, project) = get_project("demo1");
         let project = project.borrow();
         let mut packages = project.packages().unwrap();
@@ -373,7 +373,7 @@ mod tests {
     }
 
     #[test]
-    fn test_targets() {
+    fn get_targets() {
         let (_objects, project) = get_project("demo2");
         let project = project.borrow();
         let mut targets = project.targets();
@@ -386,7 +386,7 @@ mod tests {
     }
 
     #[test]
-    fn test_build_configuration_list() {
+    fn get_build_configuration_list() {
         let (_objects, project) = get_project("demo3");
         let project = project.borrow();
         let build_configuration_list = project.build_configuration_list().unwrap();
@@ -398,7 +398,7 @@ mod tests {
     }
 
     #[test]
-    fn test_main_group() {
+    fn get_main_group() {
         let (_objects, project) = get_project("demo4");
         let project = project.borrow();
         let main_group = project.main_group();
@@ -417,7 +417,7 @@ mod tests {
     }
 
     #[test]
-    fn test_products_group() {
+    fn get_products_group() {
         let (_objects, project) = get_project("demo7");
         let project = project.borrow();
         let main_group = project.products_group().unwrap();
@@ -430,7 +430,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_swift_package_duplication() {
+    fn add_swift_package_duplication() {
         let (_objects, project) = get_project("demo1");
         let mut project = project.borrow_mut();
         let err = project
@@ -445,7 +445,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_swift_package_with_new_version() {
+    fn add_swift_package_with_new_version() {
         let (root, project) = get_project("demo1");
         let mut project = project.borrow_mut();
         let new_package = project
@@ -470,7 +470,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_swift_package_new_package() {
+    fn add_swift_package_new_package() {
         let (root, project) = get_project("demo1");
         let mut project = project.borrow_mut();
         let new_package = project
