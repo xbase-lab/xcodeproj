@@ -4,6 +4,8 @@ mod obj;
 mod setget;
 mod source_tree;
 
+use crate::xcode::xcode_file_type;
+
 use super::*;
 use std::{
     cell::RefCell,
@@ -145,6 +147,103 @@ impl PBXFSReference {
             }
         })
     }
+
+    /// Add file to a group
+    ///
+    /// NOTE: This will return None if self is file
+    pub fn add_file<P: AsRef<Path>>(
+        &mut self,
+        file_path: P,
+        source_root: P,
+        source_tree: Option<PBXSourceTree>,
+    ) -> Result<Rc<RefCell<PBXFSReference>>> {
+        let (file_path, source_root) = (file_path.as_ref(), source_root.as_ref());
+
+        // if !file_path.exists() {
+        //     bail!("Trying to add non-existing file {file_path:?}")
+        // }
+
+        let group_path = self.full_path(source_root)?;
+        let objects = self
+            .objects
+            .upgrade()
+            .ok_or_else(|| anyhow::anyhow!("objects already released!"))?;
+        let mut objects = objects.borrow_mut();
+
+        // TODO(fs): ensure we are not adding a duplication
+        //
+        // NOTE: This function error because self is already borrowed mutably
+        //
+        // if let Some((file_reference, existing_file)) =
+        //     objects.files().into_iter().find(|(_, file_reference)| {
+        //         let existing_file_ref = file_reference.borrow();
+        //         let existing_file_path = if let Some(path) = existing_file_ref.path() {
+        //             PathBuf::from(path)
+        //         } else {
+        //             return file_path
+        //                 == existing_file_ref
+        //                     .full_path(&source_root)
+        //                     .unwrap_or_default();
+        //         };
+        //         if existing_file_path.components().last() == file_path.components().last() {
+        //             file_path == existing_file_ref.full_path(source_root).unwrap_or_default()
+        //         } else {
+        //             false
+        //         }
+        //     })
+        // {
+        //     if !self
+        //         .children_references
+        //         .as_ref()
+        //         .map(|r| r.contains(&file_reference))
+        //         .unwrap_or_default()
+        //     {
+        //         // TODO: file exists but doesn't exists in self.
+        //     }
+        //     return Ok(existing_file);
+        // }
+
+        let source_tree = source_tree.unwrap_or_else(|| PBXSourceTree::Group);
+        let path: Option<PathBuf> = match &source_tree {
+            PBXSourceTree::Group => Some(file_path.strip_prefix(group_path)?.to_path_buf()),
+            PBXSourceTree::SourceRoot => Some(file_path.strip_prefix(source_root)?.to_path_buf()),
+            PBXSourceTree::Absolute | PBXSourceTree::SdkRoot | PBXSourceTree::DeveloperDir => {
+                Some(file_path.to_path_buf())
+            }
+            _ => None,
+        };
+
+        let mut file_reference = PBXFSReference::default();
+        file_reference.set_source_tree(source_tree);
+        file_reference.set_name(
+            file_path
+                .file_name()
+                .map(|s| s.to_string_lossy().to_string()),
+        );
+
+        if let Some(path) = path {
+            let path = path.to_string_lossy().to_string().into();
+            file_reference.set_path(path);
+        }
+
+        let file_extension = file_path.extension().unwrap_or_default().to_string_lossy();
+        let file_extension = xcode_file_type(file_extension);
+
+        file_reference.set_explicit_file_type(file_extension.clone());
+        file_reference.set_last_known_file_type(file_extension);
+        file_reference.set_kind(PBXFSReferenceKind::File);
+
+        let file_reference = Rc::new(RefCell::new(file_reference));
+        let reference = objects.push(file_reference.clone());
+
+        let children_references = self.children_references.get_or_insert(Default::default());
+
+        if !children_references.contains(&reference) {
+            children_references.insert(reference);
+        };
+
+        Ok(file_reference)
+    }
 }
 
 impl Eq for PBXFSReference {}
@@ -176,6 +275,8 @@ impl PartialEq for PBXFSReference {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     #[test]
     fn get_parent() {
         use crate::pbxproj::test_demo_file;
@@ -199,6 +300,7 @@ mod tests {
             main_group.children_references()
         )
     }
+
     #[test]
     fn get_file() {
         use crate::pbxproj::test_demo_file;
@@ -211,5 +313,40 @@ mod tests {
         let source_group = source_group.borrow();
         let file = source_group.get_file("Log.swift");
         assert!(file.is_some())
+    }
+
+    #[test]
+    fn add_file_full_path() {
+        use crate::pbxproj::test_demo_file;
+        let root = PathBuf::from("/path/to/project");
+        let project = test_demo_file!(demo1);
+        let source_group = project
+            .objects()
+            .get_group_by_name_or_path("Source")
+            .unwrap()
+            .1;
+        let mut source_group = source_group.borrow_mut();
+        let file = source_group
+            .add_file(
+                root.join("Source").join("MyFile.swift").as_path(),
+                root.as_path(),
+                None,
+            )
+            .unwrap();
+
+        assert_eq!(file.borrow().name(), Some(&String::from("MyFile.swift")));
+        assert_eq!(file.borrow().path(), Some(&String::from("MyFile.swift")));
+
+        drop(file);
+        drop(source_group);
+
+        let file = project.objects().files().into_iter().find(|(_, o)| {
+            o.borrow()
+                .path()
+                .map(|n| n == "MyFile.swift")
+                .unwrap_or_default()
+        });
+
+        assert!(file.is_some());
     }
 }

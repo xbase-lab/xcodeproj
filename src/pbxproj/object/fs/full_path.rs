@@ -29,7 +29,6 @@ impl PBXFSReference {
                 let mut group_path: PathBuf;
 
                 if let Some(parent) = self.parent() {
-                    println!("Using parent path");
                     group_path = parent.borrow().full_path(&source_root)?;
                     if let Some(path) = self.path() {
                         group_path.extend(get_parts(path))
@@ -51,15 +50,11 @@ impl PBXFSReference {
                         if let Some(path) = self.path() {
                             let mut root = source_root.to_path_buf();
                             root.extend(get_parts(path));
-                            println!("Joining {source_root:?} with {path:?}");
                             return Ok(root);
                         } else {
-                            println!("Self is main group and return source_root as is!");
                             return Ok(source_root.to_path_buf());
                         }
                     }
-
-                    println!("Falling back to search through all groups");
 
                     // Fallback if parent is nil and it's not root element
                     let group = objects
@@ -147,6 +142,7 @@ mod tests {
                     .map(|name| name == "GuessView.swift")
                     .unwrap_or_default()
             })
+            .collect::<Vec<_>>()
             .first()
             .map(|(_, o)| o.clone())
             .unwrap();
