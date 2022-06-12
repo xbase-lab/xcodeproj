@@ -58,6 +58,14 @@ impl PBXObjectCollection {
             .collect()
     }
 
+    /// Get all PBXTargets
+    pub fn targets<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXTarget>>)> {
+        self.iter()
+            .filter(|o| o.1.is_pbx_target())
+            .map(|(k, o)| (k.clone(), o.as_pbx_target().unwrap().clone()))
+            .collect()
+    }
+
     pub(crate) fn get_fs_references<'a>(
         &'a self,
         predict: fn(Ref<PBXFSReference>) -> bool,

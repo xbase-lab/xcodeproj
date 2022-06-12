@@ -1,4 +1,4 @@
-use super::{PBXHashMap, PBXObject, PBXObjectCollection};
+use super::{PBXFSReference, PBXHashMap, PBXObject, PBXObjectCollection, PBXProject, PBXTarget};
 use anyhow::Result;
 use std::{
     cell::{Ref, RefCell, RefMut},
@@ -64,6 +64,29 @@ impl PBXRootObject {
     #[must_use]
     pub fn clone_objects<'a>(&'a self) -> Weak<RefCell<PBXObjectCollection>> {
         Rc::downgrade(&self.objects)
+    }
+
+    /// Get Project's targets
+    pub fn targets(&self) -> Vec<Rc<RefCell<PBXTarget>>> {
+        self.objects()
+            .targets()
+            .into_iter()
+            .map(|(_, o)| o)
+            .collect()
+    }
+
+    /// Get Root PBXProject
+    pub fn root_project(&self) -> Option<Rc<RefCell<PBXProject>>> {
+        self.objects()
+            .projects()
+            .into_iter()
+            .find(|(k, _)| k == self.root_object_reference())
+            .map(|(_, o)| o)
+    }
+
+    /// Get root group
+    pub fn root_group(&self) -> Option<Rc<RefCell<PBXFSReference>>> {
+        Some(self.root_project()?.borrow().main_group())
     }
 }
 
@@ -142,7 +165,9 @@ impl TryFrom<PathBuf> for PBXRootObject {
 fn test_parse() {
     let test_content = include_str!("../../tests/samples/demo1.pbxproj");
     let project = PBXRootObject::try_from(test_content).unwrap();
-    println!("{project:#?}");
+
+    println!("{:#?}", project.root_project());
+    println!("{:#?}", project.targets());
 }
 
 #[cfg(test)]
