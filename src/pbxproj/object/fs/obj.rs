@@ -26,7 +26,7 @@ impl PBXObjectExt for PBXFSReference {
                 .remove_vec("children")
                 .map(|v| v.try_into_vec_strings().ok().map(|v| HashSet::from_iter(v)))
                 .flatten(),
-            parent_reference: None,
+            parent: Weak::new(),
             file_encoding: value.remove_number("fileEncoding"),
             explicit_file_type: value.remove_string("explicitFileType"),
             last_known_file_type: value.remove_string("lastKnownFileType"),

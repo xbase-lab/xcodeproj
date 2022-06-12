@@ -84,6 +84,14 @@ impl TryFrom<PBXHashMap> for PBXRootObject {
             .collect::<HashMap<_, _>>();
 
         refcell.borrow_mut().set_inner(objects);
+        refcell
+            .borrow()
+            .groups()
+            .into_iter()
+            .for_each(|(_, group)| {
+                let fs_reference = group.borrow_mut();
+                fs_reference.assign_parent_to_children(Rc::downgrade(&group))
+            });
 
         Ok(Self {
             archive_version,
@@ -138,11 +146,11 @@ fn test_parse() {
 }
 
 #[cfg(test)]
-macro_rules! test_file {
-    ($path:expr) => {{
-        use super::*;
-
-        let file = PBXRootObject::try_from(PathBuf::from($path));
+macro_rules! test_demo_file {
+    ($name:expr) => {{
+        let (root, name) = (env!("CARGO_MANIFEST_DIR"), stringify!($name));
+        let path = format!("{root}/tests/samples/{name}.pbxproj");
+        let file = crate::pbxproj::PBXRootObject::try_from(std::path::PathBuf::from(path));
         if file.is_err() {
             println!("Error: {:#?}", file.as_ref().unwrap_err())
         }
@@ -150,6 +158,8 @@ macro_rules! test_file {
         file.unwrap()
     }};
 }
+#[cfg(test)]
+pub(crate) use test_demo_file;
 
 #[cfg(test)]
 mod create_tests {
@@ -157,8 +167,7 @@ mod create_tests {
         ($($name:ident),*) => {
             $(#[test]
                 fn $name() {
-                    let (root, name) = (env!("CARGO_MANIFEST_DIR"), stringify!($name));
-                    test_file!(format!("{root}/tests/samples/{name}.pbxproj"));
+                    test_demo_file!($name);
                 })*
         };
     }

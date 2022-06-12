@@ -2,8 +2,13 @@ mod kind;
 mod obj;
 mod setget;
 mod source_tree;
+
 use super::*;
-use std::{cell::RefCell, collections::HashSet, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashSet,
+    rc::{Rc, Weak},
+};
 
 pub use kind::*;
 pub use source_tree::*;
@@ -50,22 +55,11 @@ pub struct PBXFSReference {
     /// Version group type. (only relevant for XCVersionGroup)
     version_group_type: Option<String>,
 
-    pub(crate) parent_reference: Option<String>,
+    parent: Weak<RefCell<Self>>,
     pub(crate) objects: WeakPBXObjectCollection,
 }
 
 impl PBXFSReference {
-    /// Get a reference to the pbxfile element's parent reference.
-    #[must_use]
-    pub fn parent(&self) -> Option<Rc<RefCell<PBXFSReference>>> {
-        self.objects
-            .upgrade()?
-            .borrow()
-            .get(self.parent_reference.as_ref()?)?
-            .as_pbxfs_reference()
-            .map(|r| r.clone())
-    }
-
     /// Get Group children.
     /// WARN: This will return empty if self is of type file
     pub fn children(&self) -> Vec<Rc<RefCell<PBXFSReference>>> {
@@ -105,6 +99,27 @@ impl PBXFSReference {
                 }
             })
     }
+
+    pub(crate) fn assign_parent_to_children(&self, this: Weak<RefCell<Self>>) {
+        if self.is_group() {
+            self.children().into_iter().for_each(|o| {
+                let mut fs_reference = o.borrow_mut();
+                fs_reference.parent = this.clone();
+                fs_reference.assign_parent_to_children(Rc::downgrade(&o))
+            });
+        }
+    }
+
+    /// Set the pbxfsreference's parent.
+    pub fn set_parent(&mut self, parent: Weak<RefCell<Self>>) {
+        self.parent = parent;
+    }
+
+    /// Get a reference to the pbxfsreference's parent.
+    #[must_use]
+    pub fn parent(&self) -> Option<Rc<RefCell<Self>>> {
+        self.parent.upgrade()
+    }
 }
 
 impl Eq for PBXFSReference {}
@@ -114,7 +129,6 @@ impl PartialEq for PBXFSReference {
             && self.source_tree == other.source_tree
             && self.path == other.path
             && self.name == other.name
-            && self.parent_reference == other.parent_reference
             && self.children_references == other.children_references
             && self.current_version_reference == other.current_version_reference
             && self.version_group_type == other.version_group_type
@@ -133,4 +147,30 @@ impl PartialEq for PBXFSReference {
             && self.plist_structure_definition_identifier
                 == other.plist_structure_definition_identifier
     }
+}
+
+#[test]
+fn test_parent() {
+    use crate::pbxproj::test_demo_file;
+    let project = test_demo_file!(demo1);
+    let main_group = project
+        .objects()
+        .projects()
+        .first()
+        .unwrap()
+        .1
+        .borrow()
+        .main_group();
+
+    let main_group = main_group.borrow();
+
+    let source_group = main_group.get_subgroup("Source").unwrap();
+    let source_group = source_group.borrow();
+    let parent = source_group.parent();
+    println!("{:#?}", main_group);
+
+    assert_eq!(
+        parent.unwrap().borrow().children_references(),
+        main_group.children_references()
+    )
 }

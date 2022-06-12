@@ -58,7 +58,7 @@ impl PBXObjectCollection {
             .collect()
     }
 
-    fn fs_references<'a>(
+    pub(crate) fn get_fs_references<'a>(
         &'a self,
         predict: fn(Ref<PBXFSReference>) -> bool,
     ) -> Vec<(String, Rc<RefCell<PBXFSReference>>)> {
@@ -74,9 +74,16 @@ impl PBXObjectCollection {
             .collect()
     }
 
+    pub(crate) fn fs_references<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXFSReference>>)> {
+        self.iter()
+            .map(|(k, o)| Some((k.clone(), o.as_pbxfs_reference()?.clone())))
+            .flatten()
+            .collect()
+    }
+
     /// Get all PBXGroup
     pub fn groups<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXFSReference>>)> {
-        self.fs_references(|fs_reference| fs_reference.is_group())
+        self.get_fs_references(|fs_reference| fs_reference.is_group())
     }
 
     /// Get all PBXProject
@@ -89,7 +96,7 @@ impl PBXObjectCollection {
 
     /// Get all files
     pub fn files<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXFSReference>>)> {
-        self.fs_references(|fs_reference| fs_reference.is_file())
+        self.get_fs_references(|fs_reference| fs_reference.is_file())
     }
 
     /// Get all PBXBuildFile
