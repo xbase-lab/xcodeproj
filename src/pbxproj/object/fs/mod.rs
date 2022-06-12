@@ -11,7 +11,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 pub use kind::*;
 pub use source_tree::*;
 use tap::Pipe;
@@ -125,7 +125,7 @@ impl PBXFSReference {
     }
 
     /// Returns a file path to current fs reference using source root.
-    pub fn full_path<P: AsRef<Path>>(&self, source_root: P) -> Result<Option<PathBuf>> {
+    pub fn full_path<P: AsRef<Path>>(&self, source_root: P) -> Result<PathBuf> {
         let source_root = source_root.as_ref();
 
         let path = || {
@@ -142,22 +142,20 @@ impl PBXFSReference {
         }
 
         match self.source_tree() {
-            Some(PBXSourceTree::Absolute) => path()?.pipe(PathBuf::from).pipe(Some),
+            Some(PBXSourceTree::Absolute) => path()?.pipe(PathBuf::from),
             Some(PBXSourceTree::SourceRoot) => {
                 let mut root = source_root.to_path_buf();
                 root.extend(get_parts(path()?));
-                Some(root)
+                root
             }
             Some(PBXSourceTree::Group) => {
-                let mut group_path: Option<PathBuf>;
+                let mut group_path: PathBuf;
 
                 if let Some(parent) = self.parent() {
                     println!("Using parent path");
                     group_path = parent.borrow().full_path(&source_root)?;
-                    if let Some(ref mut g) = group_path {
-                        if let Some(path) = self.path() {
-                            g.extend(get_parts(path))
-                        }
+                    if let Some(path) = self.path() {
+                        group_path.extend(get_parts(path))
                     }
                 } else {
                     let objects = self
@@ -177,10 +175,10 @@ impl PBXFSReference {
                             let mut root = source_root.to_path_buf();
                             root.extend(get_parts(path));
                             println!("Joining {source_root:?} with {path:?}");
-                            return Ok(Some(root));
+                            return Ok(root);
                         } else {
                             println!("Self is main group and return source_root as is!");
-                            return Ok(Some(source_root.to_path_buf()));
+                            return Ok(source_root.to_path_buf());
                         }
                     }
 
@@ -208,7 +206,9 @@ impl PBXFSReference {
                 }
                 group_path
             }
-            _ => None,
+            _ => {
+                bail!("Can't get full_path from {:#?}", self)
+            }
         }
         .pipe(Ok)
     }
@@ -284,7 +284,7 @@ mod tests {
         let root = PathBuf::from("/path/to/project");
         let main_group = main_group.borrow();
         let main_group_full_path = main_group.full_path(&root);
-        assert_eq!(main_group_full_path.unwrap().unwrap(), root);
+        assert_eq!(main_group_full_path.unwrap(), root);
     }
 
     #[test]
@@ -302,10 +302,7 @@ mod tests {
 
         let source_group = source_group.borrow();
         let source_group_full_path = source_group.full_path(&root);
-        assert_eq!(
-            source_group_full_path.unwrap().unwrap(),
-            root.join("Source")
-        );
+        assert_eq!(source_group_full_path.unwrap(), root.join("Source"));
     }
 
     #[test]
@@ -330,6 +327,6 @@ mod tests {
 
         let file = file.borrow();
 
-        assert_eq!(file.full_path(root).unwrap().unwrap(), expected_file_path)
+        assert_eq!(file.full_path(root).unwrap(), expected_file_path)
     }
 }
