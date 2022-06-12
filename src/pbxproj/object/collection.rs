@@ -58,6 +58,30 @@ impl PBXObjectCollection {
             .collect()
     }
 
+    /// Get all PBXGroup
+    pub fn groups<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXGroup>>)> {
+        self.iter()
+            .filter(|o| o.1.is_pbx_group())
+            .map(|(k, o)| (k.clone(), o.as_pbx_group().unwrap().clone()))
+            .collect()
+    }
+
+    /// Get all PBXProject
+    pub fn projects<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXProject>>)> {
+        self.iter()
+            .filter(|o| o.1.is_pbx_project())
+            .map(|(k, o)| (k.clone(), o.as_pbx_project().unwrap().clone()))
+            .collect()
+    }
+
+    /// Get all files
+    pub fn files<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXFileReference>>)> {
+        self.iter()
+            .filter(|o| o.1.is_pbx_file_reference())
+            .map(|(k, o)| (k.clone(), o.as_pbx_file_reference().unwrap().clone()))
+            .collect()
+    }
+
     /// Get all PBXBuildFile
     pub fn build_files<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXBuildFile>>)> {
         self.iter()
