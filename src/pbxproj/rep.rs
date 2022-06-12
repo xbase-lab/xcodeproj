@@ -136,3 +136,32 @@ fn test_parse() {
     let project = PBXRootObject::try_from(test_content).unwrap();
     println!("{project:#?}");
 }
+
+#[cfg(test)]
+macro_rules! test_file {
+    ($path:expr) => {{
+        use super::*;
+
+        let file = PBXRootObject::try_from(PathBuf::from($path));
+        if file.is_err() {
+            println!("Error: {:#?}", file.as_ref().unwrap_err())
+        }
+        assert!(file.is_ok());
+        file.unwrap()
+    }};
+}
+
+#[cfg(test)]
+mod create_tests {
+    macro_rules! test_samples {
+        ($($name:ident),*) => {
+            $(#[test]
+                fn $name() {
+                    let (root, name) = (env!("CARGO_MANIFEST_DIR"), stringify!($name));
+                    test_file!(format!("{root}/tests/samples/{name}.pbxproj"));
+                })*
+        };
+    }
+
+    test_samples![demo1, demo2, demo3, demo4, demo5, demo6, demo7, demo8, demo9];
+}
