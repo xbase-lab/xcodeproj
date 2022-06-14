@@ -37,8 +37,8 @@ tracing-test = "0.2.1"
 once_cell = "1.12.0"
 
 [features]
-default = [ "tracing" ]
-tracing = [ "dep:tracing", "tracing-appender", "tracing-subscriber" ]
+default = [ "with_tracing" ]
+with_tracing = [ "tracing", "tracing-appender", "tracing-subscriber" ]
 
 [build-dependencies]
 phf_codegen = "0.10.0"
