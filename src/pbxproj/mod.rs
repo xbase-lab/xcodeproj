@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use tap::Pipe;
 
 /// `Main` Representation of project.pbxproj file
-#[derive(Debug, derive_new::new, derive_deref_rs::Deref)]
+#[derive(Default, Debug, derive_new::new, derive_deref_rs::Deref)]
 pub struct PBXRootObject {
     /// archiveVersion
     archive_version: u8,

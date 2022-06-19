@@ -14,7 +14,7 @@ pub mod pbxproj;
 pub mod xcode;
 
 /// Main presentation of XCodeProject
-#[derive(Debug, derive_deref_rs::Deref)]
+#[derive(Debug, Default, derive_deref_rs::Deref)]
 pub struct XCodeProject {
     root: PathBuf,
     #[deref]
