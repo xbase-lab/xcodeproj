@@ -5,24 +5,25 @@ use crate::pbxproj::*;
 /// [`PBXObject`]: crate::pbxproj::PBXObject
 /// [`XCSwiftPackageProductDependency`]: crate::pbxproj::XCSwiftPackageProductDependency
 #[derive(Debug, derive_new::new)]
-pub struct XCRemoteSwiftPackageReference {
+pub struct XCRemoteSwiftPackageReference<'a> {
+    /// ID Reference
+    pub id: String,
     /// Repository url.
-    pub repository_url: Option<String>,
+    pub repository_url: Option<&'a String>,
     /// Version rules.
     pub version_requirement: Option<XCVersionRequirement>,
-    objects: WeakPBXObjectCollection,
 }
 
-impl Eq for XCRemoteSwiftPackageReference {}
+impl<'a> Eq for XCRemoteSwiftPackageReference<'a> {}
 
-impl PartialEq for XCRemoteSwiftPackageReference {
+impl<'a> PartialEq for XCRemoteSwiftPackageReference<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.repository_url == other.repository_url
             && self.version_requirement == other.version_requirement
     }
 }
 
-impl XCRemoteSwiftPackageReference {
+impl<'a> XCRemoteSwiftPackageReference<'a> {
     /// It returns the name of the package reference.
     pub fn name(&self) -> Option<&str> {
         self.repository_url
@@ -43,25 +44,22 @@ impl XCRemoteSwiftPackageReference {
     }
 }
 
-impl PBXObjectExt for XCRemoteSwiftPackageReference {
-    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+impl<'a> AsPBXObject<'a> for XCRemoteSwiftPackageReference<'a> {
+    fn as_pbx_object(
+        id: String,
+        value: &'a PBXHashMap,
+        _objects: &'a PBXObjectCollection,
+    ) -> anyhow::Result<Self>
     where
-        Self: Sized,
+        Self: Sized + 'a,
     {
         Ok(Self {
-            repository_url: value
-                .remove_value("repositoryURL")
-                .map(|v| v.try_into().ok())
-                .flatten(),
+            id,
+            repository_url: value.get_string("repositoryURL"),
             version_requirement: value
-                .remove_value("requirement")
+                .get_value("requirement")
                 .map(|v| v.try_into().ok())
                 .flatten(),
-            objects,
         })
-    }
-
-    fn to_hashmap(&self) -> PBXHashMap {
-        todo!()
     }
 }

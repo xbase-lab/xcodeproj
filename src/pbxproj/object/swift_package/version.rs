@@ -22,28 +22,30 @@ pub enum XCVersionRequirement {
     Revision(String),
 }
 
-impl TryFrom<PBXValue> for XCVersionRequirement {
+impl TryFrom<&PBXValue> for XCVersionRequirement {
     type Error = anyhow::Error;
 
-    fn try_from(value: PBXValue) -> Result<Self, Self::Error> {
-        let mut map = value.try_into_object()?;
-        let key = map.try_remove_string("kind")?;
+    fn try_from(value: &PBXValue) -> Result<Self, Self::Error> {
+        let map = value
+            .as_object()
+            .ok_or_else(|| anyhow::anyhow!("Can get XCVersionRequirement for non object type"))?;
+        let key = map.try_get_string("kind")?;
         match key.as_str() {
-            "bracnh" => Self::Branch(map.try_remove_string(&key)?),
-            "revision" => Self::Revision(map.try_remove_string(&key)?),
-            "exactVersion" => Self::Exact(map.try_remove_string("version")?),
+            "bracnh" => Self::Branch(map.try_get_string(&key)?.to_string()),
+            "revision" => Self::Revision(map.try_get_string(&key)?.to_string()),
+            "exactVersion" => Self::Exact(map.try_get_string("version")?.to_string()),
             "versionRange" => {
-                let min = map.try_remove_string("minimumVersion")?;
-                let max = map.try_remove_string("maximumVersion")?;
-                Self::Range(min, max)
+                let min = map.try_get_string("minimumVersion")?;
+                let max = map.try_get_string("maximumVersion")?;
+                Self::Range(min.to_string(), max.to_string())
             }
             "upToNextMinorVersion" => {
-                let min = map.try_remove_string("minimumVersion")?;
-                Self::UpToNextMinorVersion(min)
+                let min = map.try_get_string("minimumVersion")?;
+                Self::UpToNextMinorVersion(min.to_string())
             }
             "upToNextMajorVersion" => {
-                let max = map.try_remove_string("maximumVersion")?;
-                Self::UpToNextMajorVersion(max)
+                let max = map.try_get_string("maximumVersion")?;
+                Self::UpToNextMajorVersion(max.to_string())
             }
             k => bail!("Unkown kind {k}"),
         }

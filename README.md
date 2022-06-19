@@ -1,15 +1,15 @@
 # XcodeProj
 
-Work-in-progress XcodeProj reader and writer.
+XcodeProj reader and writer.
 
-Currently optimized for reading and not garanted to be used to modify existing xcodeproj.
+Currently optimized for reading. please see docs for usage.
 
 ## Milestones
 
 - [x] parse `*.xcodeproj` through [pest]
 - [x] parse [pest] ast to `PBXRootObject`, as an meaningful abstraction.
-- [ ] add helper methods to maniuplate and read pbxproj objects.
-- [ ] write `ProjectData` back to `*.xcodeproj` filetype.
+- [ ] add helper methods to manipulate and read pbxproj objects.
+- [ ] write to `*.xcodeproj` filetype.
 - [ ] preserve comments and reduce git conflicts.
 - [ ] support reading XCWorkspace and XCScheme
 

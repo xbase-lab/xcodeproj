@@ -274,6 +274,16 @@ impl PBXVec {
         Ok(collector)
     }
 
+    pub(crate) fn as_vec_strings<'a>(&'a self) -> Vec<&'a String> {
+        let mut collector = vec![];
+        for value in self.0.iter() {
+            if let Some(str) = value.as_string() {
+                collector.push(str);
+            }
+        }
+        collector
+    }
+
     pub(crate) fn try_into_vec<T: TryFrom<T> + From<PBXValue>>(self) -> Result<Vec<T>> {
         let mut collector = vec![];
         for value in self.0 {

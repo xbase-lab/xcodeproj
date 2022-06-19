@@ -1,110 +1,224 @@
-use md5::Digest;
-
-use super::*;
-use std::{
-    cell::{Ref, RefCell},
-    collections::HashMap,
-    rc::{Rc, Weak},
-};
-
-/// An alias for weak reference of [`PBXObjectCollection`]
-pub type WeakPBXObjectCollection = Weak<RefCell<PBXObjectCollection>>;
+// use md5::Digest;
+// use rand::distributions::Alphanumeric;
+// use rand::{thread_rng, Rng};
+use crate::pbxproj::*;
+use anyhow::Result;
+use std::collections::HashMap;
 
 /// [`PBXObject`] storage with convenient helper methods
 #[derive(Default, Debug, derive_new::new, derive_deref_rs::Deref)]
-pub struct PBXObjectCollection(pub(crate) HashMap<String, PBXObject>);
+pub struct PBXObjectCollection(pub(crate) HashMap<String, PBXHashMap>);
 
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+/// Get PBXObject from PBXHashMap and PBXObjectCollection
+pub trait AsPBXObject<'a> {
+    /// create a pbx object out of given value
+    fn as_pbx_object(
+        id: String,
+        value: &'a PBXHashMap,
+        objects: &'a PBXObjectCollection,
+    ) -> Result<Self>
+    where
+        Self: Sized + 'a;
+}
 
-/// TODO: make collections a HashSet of PBXObject with identifier included?
 impl PBXObjectCollection {
-    /// Add new object. same as insert but it auto create id and returns it
-    pub fn push<O: Into<PBXObject>>(&mut self, object: O) -> String {
-        let data: String = thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(20)
-            .map(char::from)
-            .collect();
-        let mut hasher = md5::Md5::new();
-        let ref mut buf = [0u8; 128];
-        hasher.update(&data);
-        let hash = hasher.finalize();
-        let id = base16ct::upper::encode_str(&hash, buf).unwrap()[..24].to_string();
-        self.insert(id.clone(), object.into());
-        id
+    /// Get T from collection
+    pub fn get<'a, T, S>(&'a self, key: S) -> Option<T>
+    where
+        T: AsPBXObject<'a> + 'a,
+        S: AsRef<str>,
+    {
+        self.0.get(key.as_ref()).and_then(|value| {
+            AsPBXObject::as_pbx_object(key.as_ref().to_string(), value, self).ok()
+        })
     }
 
-    /// Get PBXTarget by reference
-    pub fn get_target<'a>(&'a self, reference: &str) -> Option<Rc<RefCell<PBXTarget>>> {
-        self.get(reference)?.as_pbx_target().map(|r| r.clone())
+    /// Get T from collection
+    pub fn try_get<'a, T, S>(&'a self, key: S) -> Result<T>
+    where
+        T: AsPBXObject<'a> + 'a,
+        S: AsRef<str> + std::fmt::Debug,
+    {
+        self.get(key.as_ref())
+            .ok_or_else(|| anyhow::anyhow!("{key:?} doesn't exists!"))
     }
 
-    /// Get PBXBuildPhase by reference
-    pub fn get_build_phase<'a>(&'a self, reference: &str) -> Option<Rc<RefCell<PBXBuildPhase>>> {
-        self.get(reference)?.as_pbx_build_phase().map(|r| r.clone())
+    /// Get PBXObject a vector of type T
+    pub fn get_vec<'a, T, I, S>(&'a self, keys: I) -> Vec<T>
+    where
+        T: AsPBXObject<'a> + 'a,
+        I: IntoIterator<Item = S> + Send,
+        S: AsRef<str>,
+    {
+        keys.into_iter()
+            .flat_map(|key| self.get(key.as_ref()))
+            .collect::<Vec<_>>()
     }
 
-    /// Get PBXBuildFile by reference
-    pub fn get_build_file<'a>(&'a self, reference: &str) -> Option<Rc<RefCell<PBXBuildFile>>> {
-        self.get(reference)?.as_pbx_build_file().map(|r| r.clone())
-    }
-
-    /// Get all PBXBuildPhase
-    pub fn build_phases<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXBuildPhase>>)> {
-        self.iter()
-            .filter(|o| o.1.is_pbx_build_phase())
-            .map(|(k, o)| (k.clone(), o.as_pbx_build_phase().unwrap().clone()))
-            .collect()
-    }
-
-    /// Get all PBXTargets
-    pub fn targets<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXTarget>>)> {
-        self.iter()
-            .filter(|o| o.1.is_pbx_target())
-            .map(|(k, o)| (k.clone(), o.as_pbx_target().unwrap().clone()))
-            .collect()
-    }
-
-    pub(crate) fn get_fs_references<'a>(
+    /// Get vector by vector of T by predict
+    pub fn get_vec_by<'a, T: AsPBXObject<'a> + 'a>(
         &'a self,
-        predict: fn(Ref<PBXFSReference>) -> bool,
-    ) -> impl Iterator<Item = (String, Rc<RefCell<PBXFSReference>>)> + 'a {
+        predict: fn(&(&String, &PBXHashMap)) -> bool,
+    ) -> Vec<T> {
         self.iter()
-            .filter(move |o| {
-                if let Some(fs_reference) = o.1.as_pbxfs_reference() {
-                    predict(fs_reference.borrow())
-                } else {
-                    false
-                }
-            })
-            .map(|(k, o)| (k.clone(), o.as_pbxfs_reference().unwrap().clone()))
+            .filter(predict)
+            .flat_map(|(k, _)| self.get(k))
+            .collect::<Vec<_>>()
     }
 
-    pub(crate) fn fs_references<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXFSReference>>)> {
-        self.iter()
-            .map(|(k, o)| Some((k.clone(), o.as_pbxfs_reference()?.clone())))
-            .flatten()
-            .collect()
+    /// Get all PBXTarget
+    pub fn targets<'a>(&'a self) -> Vec<PBXTarget<'a>> {
+        self.get_vec_by(|(_, v)| {
+            v.get_kind("isa")
+                .map(|k| k.is_pbx_target())
+                .unwrap_or_default()
+        })
     }
 
-    /// Get all PBXGroup
-    pub fn groups<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXFSReference>>)> {
-        self.get_fs_references(|fs_reference| fs_reference.is_group())
-            .collect()
+    /// Get all PBXProject
+    pub fn projects<'a>(&'a self) -> Vec<PBXProject<'a>> {
+        self.get_vec_by(|(_, v)| {
+            v.get_kind("isa")
+                .map(|k| k.is_pbx_project())
+                .unwrap_or_default()
+        })
+    }
+
+    /// Get all build phases
+    pub fn build_phases<'a>(&'a self) -> Vec<PBXBuildPhase<'a>> {
+        self.get_vec_by(|(_, v)| {
+            v.get_kind("isa")
+                .map(|k| k.is_pbx_build_phase())
+                .unwrap_or_default()
+        })
+    }
+
+    /// Get all build phases
+    pub fn build_files<'a>(&'a self) -> Vec<PBXBuildFile<'a>> {
+        self.get_vec_by(|(_, v)| {
+            v.get_kind("isa")
+                .map(|k| k.is_pbx_build_file())
+                .unwrap_or_default()
+        })
+    }
+
+    /// Get all build phases
+    pub fn build_rules<'a>(&'a self) -> Vec<PBXBuildRule<'a>> {
+        self.get_vec_by(|(_, v)| {
+            v.get_kind("isa")
+                .map(|k| k.is_pbx_build_rule())
+                .unwrap_or_default()
+        })
+    }
+
+    /// Get all source code files
+    pub fn files<'a>(&'a self) -> Vec<PBXFSReference<'a>> {
+        self.get_vec_by(|(_, v)| {
+            v.get_kind("isa")
+                .map(|k| {
+                    k.is_pbx_fsreference()
+                        && k.as_pbxfs_reference()
+                            .map(|r| r.is_file())
+                            .unwrap_or_default()
+                })
+                .unwrap_or_default()
+        })
+    }
+
+    /// Get all groups
+    pub fn groups<'a>(&'a self) -> Vec<PBXFSReference<'a>> {
+        self.get_vec_by(|(_, v)| {
+            v.get_kind("isa")
+                .map(|k| {
+                    k.is_pbx_fsreference()
+                        && k.as_pbxfs_reference()
+                            .map(|r| r.is_group())
+                            .unwrap_or_default()
+                })
+                .unwrap_or_default()
+        })
+    }
+
+    /// Get All XCSwiftPackageProductDependency Objects
+    pub fn swift_package_product_dependencies<'a>(
+        &'a self,
+    ) -> Vec<XCSwiftPackageProductDependency> {
+        self.get_vec_by(|(_, v)| {
+            v.get_kind("isa")
+                .map(|k| k.is_xc_swift_package_product_dependency())
+                .unwrap_or_default()
+        })
+    }
+
+    /// Get All XCRemoteSwiftPackageReference Objects
+    pub fn swift_package_references<'a>(&'a self) -> Vec<XCRemoteSwiftPackageReference> {
+        self.get_vec_by(|(_, v)| {
+            v.get_kind("isa")
+                .map(|k| k.is_xc_remote_swift_package_reference())
+                .unwrap_or_default()
+        })
+    }
+
+    /// Get PBXTarget
+    pub fn get_target<'a>(&'a self, key: &str) -> Option<PBXTarget> {
+        self.get(key)
+    }
+
+    /// Get PBXBuildPhase
+    pub fn get_build_phase<'a>(&'a self, key: &str) -> Option<PBXBuildPhase> {
+        self.get(key)
+    }
+
+    /// Get PBXBuildFile
+    pub fn get_build_file<'a>(&'a self, key: &str) -> Option<PBXBuildFile> {
+        self.get(key)
+    }
+
+    /// Get PBXBuildRule
+    pub fn get_build_rule<'a>(&'a self, key: &str) -> Option<PBXBuildRule> {
+        self.get(key)
+    }
+
+    /// Get PBXProject
+    pub fn get_project<'a>(&'a self, key: &str) -> Option<PBXProject> {
+        self.get(key)
+    }
+
+    /// Get all files
+    pub fn get_file<'a>(&'a self, key: &str) -> Option<PBXFSReference> {
+        let fs_ref = self.get::<PBXFSReference, _>(key)?;
+        if fs_ref.is_file() {
+            Some(fs_ref)
+        } else {
+            None
+        }
+    }
+
+    /// Get all files
+    pub fn get_group<'a>(&'a self, key: &str) -> Option<PBXFSReference> {
+        let fs_ref = self.get::<PBXFSReference, _>(key)?;
+        if fs_ref.is_group() {
+            Some(fs_ref)
+        } else {
+            None
+        }
+    }
+
+    /// Get fs object
+    pub fn get_fs_object<'a>(&'a self, key: &str) -> Option<PBXFSReference> {
+        self.get(key)
     }
 
     /// Get PBXGroup with by name or path
     pub fn get_group_by_name_or_path<'a, S: AsRef<str>>(
         &'a self,
         name_or_path: S,
-    ) -> Option<(String, Rc<RefCell<PBXFSReference>>)> {
+    ) -> Option<PBXFSReference> {
         let name = name_or_path.as_ref();
-        self.groups().into_iter().find(|(_, o)| {
-            let group = o.borrow();
-            if let Some(n) = group.name() {
+        self.groups().into_iter().find(|o| {
+            if let Some(n) = o.name {
                 return n == name;
-            } else if let Some(p) = group.path() {
+            } else if let Some(p) = o.path {
                 return p == name;
             } else {
                 false
@@ -112,150 +226,30 @@ impl PBXObjectCollection {
         })
     }
 
-    /// Get all PBXProject
-    pub fn projects<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXProject>>)> {
-        self.iter()
-            .filter(|o| o.1.is_pbx_project())
-            .map(|(k, o)| (k.clone(), o.as_pbx_project().unwrap().clone()))
-            .collect()
-    }
-
-    /// Get all files
-    pub fn files<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXFSReference>>)> {
-        self.get_fs_references(|fs_reference| fs_reference.is_file())
-            .collect()
-    }
-
-    /// Get all PBXBuildFile
-    pub fn build_files<'a>(&'a self) -> Vec<(String, Rc<RefCell<PBXBuildFile>>)> {
-        self.iter()
-            .filter(|o| o.1.is_pbx_build_file())
-            .map(|(k, o)| (k.clone(), o.as_pbx_build_file().unwrap().clone()))
-            .collect()
-    }
-
-    /// Get All XCSwiftPackageProductDependency Objects
-    pub fn swift_package_product_dependencies<'a>(
-        &'a self,
-    ) -> Vec<(String, Rc<RefCell<XCSwiftPackageProductDependency>>)> {
-        self.iter()
-            .map(|(k, v)| {
-                Some((
-                    k.clone(),
-                    v.as_xc_swift_package_product_dependency()?.clone(),
-                ))
-            })
-            .flatten()
-            .collect::<Vec<_>>()
-    }
-
-    /// Get All XCRemoteSwiftPackageReference Objects
-    pub fn swift_package_references<'a>(
-        &'a self,
-    ) -> Vec<(String, Rc<RefCell<XCRemoteSwiftPackageReference>>)> {
-        self.iter()
-            .map(|(k, v)| Some((k.clone(), v.as_xc_remote_swift_package_reference()?.clone())))
-            .flatten()
-            .collect::<Vec<_>>()
-    }
-
     /// Get XCSwiftPackageProductDependency by reference
     pub fn get_swift_package_product_dependency<'a>(
         &'a self,
-        object_reference: &str,
-    ) -> Option<Rc<RefCell<XCSwiftPackageProductDependency>>> {
-        self.get(object_reference)?
-            .as_xc_swift_package_product_dependency()
-            .map(|r| r.clone())
+        key: &str,
+    ) -> Option<XCSwiftPackageProductDependency> {
+        self.get(key)
     }
 
     /// Get XCSwiftPackageProductDependency by reference
     pub fn get_swift_package_reference<'a>(
         &'a self,
-        object_reference: &str,
-    ) -> Option<Rc<RefCell<XCRemoteSwiftPackageReference>>> {
-        self.get(object_reference)?
-            .as_xc_remote_swift_package_reference()
-            .map(|r| r.clone())
-    }
-
-    /// Get PBXTarget from a vec of references
-    pub fn get_targets_from_references<'a>(
-        &'a self,
-        references: &Vec<String>,
-    ) -> Vec<(String, Rc<RefCell<PBXTarget>>)> {
-        references
-            .iter()
-            .map(|id| Some((id.clone(), self.get_target(id)?)))
-            .flatten()
-            .collect()
+        key: &str,
+    ) -> Option<XCRemoteSwiftPackageReference> {
+        self.get(key)
     }
 
     /// Get PBXTarget by the target name
-    pub fn get_target_by_name<'a>(
-        &'a self,
-        target_name: &'a str,
-    ) -> Option<(String, Rc<RefCell<PBXTarget>>)> {
-        self.iter()
-            .find(|(_, o)| {
-                if let Some(target) = o.as_pbx_target() {
-                    if let Some(name) = target.borrow().name.as_ref() {
-                        name == target_name
-                    } else {
-                        false
-                    }
-                } else {
-                    false
-                }
-            })
-            .map(|(key, o)| (key.clone(), o.as_pbx_target().unwrap().clone()))
-    }
-
-    /// Get XCRemoteSwiftPackageReference from a vec of references
-    pub fn get_swift_package_reference_from_references<'a>(
-        &'a self,
-        references: &Vec<String>,
-    ) -> Vec<(String, Rc<RefCell<XCRemoteSwiftPackageReference>>)> {
-        references
-            .iter()
-            .map(|reference| {
-                Some((
-                    reference.clone(),
-                    self.get_swift_package_reference(reference)?,
-                ))
-            })
-            .flatten()
-            .collect()
-    }
-
-    /// Get PBXBuildPhase from a vec of references
-    pub fn get_build_phases_from_reference<'a>(
-        &'a self,
-        references: &Vec<String>,
-    ) -> Vec<(String, Rc<RefCell<PBXBuildPhase>>)> {
-        references
-            .iter()
-            .map(|reference| Some((reference.clone(), self.get_build_phase(reference)?)))
-            .flatten()
-            .collect()
-    }
-
-    /// Get XCSwiftPackageProductDependency form a given target reference
-    pub fn get_product_dependency_from_target_reference<'a>(
-        &'a self,
-        target_reference: &str,
-    ) -> Option<(String, Rc<RefCell<XCSwiftPackageProductDependency>>)> {
-        self.swift_package_product_dependencies()
-            .into_iter()
-            .find(|(_, p)| {
-                p.borrow()
-                    .package_reference()
-                    .map(|v| v == target_reference)
-                    .unwrap_or_default()
-            })
-    }
-
-    pub(crate) fn set_inner(&mut self, map: HashMap<String, PBXObject>) {
-        self.0 = map;
+    pub fn get_target_by_name<'a>(&'a self, name: &'a str) -> Option<PBXTarget> {
+        self.targets().into_iter().find(|target| {
+            if let Some(target_name) = target.name {
+                target_name == name
+            } else {
+                false
+            }
+        })
     }
 }

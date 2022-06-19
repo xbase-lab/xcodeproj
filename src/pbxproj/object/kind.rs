@@ -1,7 +1,7 @@
 use derive_is_enum_variant::is_enum_variant;
 use enum_as_inner::EnumAsInner;
 
-use super::{PBXBuildPhaseKind, PBXFSReferenceKind, PBXGroupKind};
+use super::{PBXBuildPhaseKind, PBXFSReferenceKind};
 
 /// Representation of all Target kinds
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, is_enum_variant)]
@@ -88,6 +88,30 @@ impl PBXObjectKind {
             Err(self)
         }
     }
+
+    /// Returns `true` if the pbxobject kind is [`PBXTarget`].
+    ///
+    /// [`PBXTarget`]: PBXObjectKind::PBXTarget
+    #[must_use]
+    pub fn is_pbx_target(&self) -> bool {
+        matches!(self, Self::PBXTarget(..))
+    }
+
+    /// Returns `true` if the pbxobject kind is [`PBXBuildPhase`].
+    ///
+    /// [`PBXBuildPhase`]: PBXObjectKind::PBXBuildPhase
+    #[must_use]
+    pub fn is_pbx_build_phase(&self) -> bool {
+        matches!(self, Self::PBXBuildPhase(..))
+    }
+
+    /// Returns `true` if the pbxobject kind is [`PBXFSReference`].
+    ///
+    /// [`PBXFSReference`]: PBXObjectKind::PBXFSReference
+    #[must_use]
+    pub fn is_pbx_fsreference(&self) -> bool {
+        matches!(self, Self::PBXFSReference(..))
+    }
 }
 
 impl From<&str> for PBXObjectKind {
@@ -99,7 +123,7 @@ impl From<&str> for PBXObjectKind {
             "PBXNativeTarget" => Self::PBXTarget(PBXTargetKind::Native),
             "PBXAggregateTarget" => Self::PBXTarget(PBXTargetKind::Aggregate),
             "PBXProject" => Self::PBXProject,
-            "PBXGroup" => Self::PBXFSReference(PBXFSReferenceKind::Group(PBXGroupKind::FileGroup)),
+            "PBXGroup" => Self::PBXFSReference(PBXFSReferenceKind::FileGroup),
             "PBXHeadersBuildPhase" => Self::PBXBuildPhase(PBXBuildPhaseKind::Headers),
             "PBXFrameworksBuildPhase" => Self::PBXBuildPhase(PBXBuildPhaseKind::Frameworks),
             "PBXResourcesBuildPhase" => Self::PBXBuildPhase(PBXBuildPhaseKind::Resources),
@@ -109,14 +133,10 @@ impl From<&str> for PBXObjectKind {
             "PBXRezBuildPhase" => Self::PBXBuildPhase(PBXBuildPhaseKind::CarbonResources),
             "XCConfigurationList" => Self::XCConfigurationList,
             "PBXTargetDependency" => Self::PBXTargetDependency,
-            "PBXVariantGroup" => {
-                Self::PBXFSReference(PBXFSReferenceKind::Group(PBXGroupKind::VariantGroup))
-            }
+            "PBXVariantGroup" => Self::PBXFSReference(PBXFSReferenceKind::VariantGroup),
             "XCBuildConfiguration" => Self::XCBuildConfiguration,
             "PBXContainerItemProxy" => Self::PBXContainerItemProxy,
-            "XCVersionGroup" => {
-                Self::PBXFSReference(PBXFSReferenceKind::Group(PBXGroupKind::VersionGroup))
-            }
+            "XCVersionGroup" => Self::PBXFSReference(PBXFSReferenceKind::VersionGroup),
             "PBXBuildRule" => Self::PBXBuildRule,
             "XCRemoteSwiftPackageReference" => Self::XCRemoteSwiftPackageReference,
             "XCSwiftPackageProductDependency" => Self::XCSwiftPackageProductDependency,

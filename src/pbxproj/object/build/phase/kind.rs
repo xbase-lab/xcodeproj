@@ -2,7 +2,7 @@ use derive_is_enum_variant::is_enum_variant;
 use tap::Pipe;
 
 /// Enum that encapsulates all kind of build phases available in Xcode.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, is_enum_variant)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, is_enum_variant)]
 pub enum PBXBuildPhaseKind {
     /// Sources
     Sources,

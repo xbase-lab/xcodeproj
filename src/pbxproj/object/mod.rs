@@ -1,11 +1,10 @@
 mod build;
-mod file;
-mod meta;
 mod project;
 mod swift_package;
 mod target;
 
 mod collection;
+mod container_item_proxy;
 mod fs;
 mod kind;
 mod product_type;
@@ -15,8 +14,7 @@ pub use kind::*;
 pub use product_type::*;
 
 pub use build::*;
-pub use file::*;
-pub use meta::*;
+pub use container_item_proxy::*;
 pub use project::*;
 
 pub use swift_package::*;

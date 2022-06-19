@@ -2,70 +2,41 @@ use crate::pbxproj::*;
 
 /// [`PBXObject`] referencing other targets through content proxies.
 #[derive(Debug, derive_new::new)]
-pub struct PBXTargetDependency {
+pub struct PBXTargetDependency<'a> {
+    /// ID Reference
+    pub id: String,
     /// Target name.
-    pub name: Option<String>,
+    pub name: Option<&'a String>,
     /// Platform filter attribute.
-    /// Introduced in: Xcode 11
-    pub platform_filter: Option<String>,
-    /// Target reference.
-    target_reference: Option<String>,
-    /// Target proxy reference.
-    target_proxy_reference: Option<String>,
+    pub platform_filter: Option<&'a String>,
+    /// Target
+    pub target: Option<PBXTarget<'a>>,
+    /// Target proxy
+    pub target_proxy: Option<PBXContainerItemProxy<'a>>,
     /// Product reference.
-    product_reference: Option<String>,
-    objects: WeakPBXObjectCollection,
+    pub product: Option<XCSwiftPackageProductDependency<'a>>,
 }
 
-impl PBXTargetDependency {
-    /// Target.
-    pub fn target(&self, _data: &PBXRootObject) -> Option<PBXObject> {
-        // targetReference?.getObject()
-        todo!()
-    }
-
-    /// Target.
-    pub fn set_target(&mut self) -> Option<PBXTarget> {
-        todo!()
-    }
-    /// Target proxy.
-    pub fn target_proxy(&self) -> Option<PBXContainerItemProxy> {
-        // targetProxyReference?.getObject()
-        todo!()
-    }
-    /// Target proxy.
-    pub fn set_target_proxy(&mut self) -> Option<PBXContainerItemProxy> {
-        todo!()
-    }
-
-    /// Product.
-    pub fn set_product(&mut self) -> Option<XCSwiftPackageProductDependency> {
-        todo!()
-    }
-
-    /// Product.
-    pub fn product(&self) -> Option<XCSwiftPackageProductDependency> {
-        // productReference?.getObject()
-        todo!()
-    }
-}
-
-impl PBXObjectExt for PBXTargetDependency {
-    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
+impl<'a> AsPBXObject<'a> for PBXTargetDependency<'a> {
+    fn as_pbx_object(
+        id: String,
+        value: &'a PBXHashMap,
+        objects: &'a PBXObjectCollection,
+    ) -> anyhow::Result<Self>
     where
-        Self: Sized,
+        Self: Sized + 'a,
     {
         Ok(Self {
-            name: value.remove_string("name"),
-            platform_filter: value.remove_string("platformFilter"),
-            target_reference: value.remove_string("target"),
-            target_proxy_reference: value.remove_string("targetProxy"),
-            product_reference: value.remove_string("productRef"),
-            objects,
+            id,
+            name: value.get_string("name"),
+            platform_filter: value.get_string("platformFilter"),
+            target: value.get_string("target").and_then(|key| objects.get(key)),
+            target_proxy: value
+                .get_string("targetProxy")
+                .and_then(|key| objects.get(key)),
+            product: value
+                .get_string("productRef")
+                .and_then(|key| objects.get(key)),
         })
-    }
-
-    fn to_hashmap(&self) -> PBXHashMap {
-        todo!()
     }
 }

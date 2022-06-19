@@ -9,109 +9,30 @@ pub use rule::*;
 pub use script::*;
 
 use crate::pbxproj::*;
-use std::collections::HashSet;
 
 /// `Abstraction` of build phase variants.
 #[derive(Debug, derive_new::new)]
-pub struct PBXBuildPhase {
+pub struct PBXBuildPhase<'a> {
+    /// ID Reference
+    pub id: String,
     /// Element build action mask.
     pub build_action_mask: isize,
     /// References to build files.
-    pub file_references: Option<HashSet<String>>,
+    pub files: Vec<PBXBuildFile<'a>>,
     /// Paths to the input file lists.
-    pub input_file_list_paths: Option<Vec<String>>,
+    pub input_file_list_paths: Option<Vec<&'a String>>,
     /// Paths to the output file lists.
-    pub output_file_list_paths: Option<Vec<String>>,
+    pub output_file_list_paths: Option<Vec<&'a String>>,
     /// Element run only for deployment post processing value.
     pub run_only_for_deployment_postprocessing: bool,
-    // ----
-    kind: PBXBuildPhaseKind,
-    inner: Option<PBXShellScriptBuildPhase>,
-    objects: WeakPBXObjectCollection,
+    /// Build Phase Kind
+    pub kind: PBXBuildPhaseKind,
+    /// inner (Some if PBXBuildPhase is PBXShellScriptBuildPhase)
+    pub inner: Option<PBXShellScriptBuildPhase<'a>>,
 }
 
-impl PBXBuildPhase {
+impl<'a> PBXBuildPhase<'a> {
     const DEFAULT_BUILD_ACTION_MASK: isize = 2_147_483_647;
-
-    /// Get Build files that the build phase include
-    pub fn files(&self) -> Option<Vec<&PBXBuildFile>> {
-        // objects from file_references?.objects()
-        todo!()
-    }
-
-    /// set file references.
-    pub fn set_file_references(
-        &mut self,
-        references: Option<HashSet<String>>,
-    ) -> Option<HashSet<String>> {
-        std::mem::replace(&mut self.file_references, references)
-    }
-
-    /// Add file_reference
-    pub fn add_file_reference(&mut self, reference: String) {
-        let mut file_references = self.file_references.take().unwrap_or_default();
-        file_references.insert(reference);
-        self.file_references = file_references.into();
-    }
-}
-
-impl PBXObjectExt for PBXBuildPhase {
-    fn from_hashmap(mut value: PBXHashMap, objects: WeakPBXObjectCollection) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        let kind = value
-            .try_remove_kind("isa")?
-            .try_into_build_phase_kind()
-            .unwrap();
-
-        Ok(Self {
-            build_action_mask: value
-                .try_remove_number("buildActionMask")
-                .unwrap_or_else(|_| Self::DEFAULT_BUILD_ACTION_MASK),
-            file_references: value
-                .remove_vec("files")
-                .map(|v| v.try_into_vec_strings().ok())
-                .flatten()
-                .map(|v| HashSet::from_iter(v)),
-            input_file_list_paths: value
-                .remove_vec("inputFileListPaths")
-                .map(|v| v.try_into_vec_strings().ok())
-                .flatten(),
-            output_file_list_paths: value
-                .remove_vec("outputFileListPaths")
-                .map(|v| v.try_into_vec_strings().ok())
-                .flatten(),
-            run_only_for_deployment_postprocessing: value
-                .remove_number("runOnlyForDeploymentPostprocessing")
-                .map(|v| v == 1)
-                .unwrap_or_default(),
-            objects,
-            inner: if kind.is_run_script() {
-                Some(PBXObjectExt::from_hashmap(value, Default::default())?)
-            } else {
-                None
-            },
-            kind,
-        })
-    }
-
-    fn to_hashmap(&self) -> PBXHashMap {
-        todo!()
-    }
-}
-
-impl PBXBuildPhase {
-    /// Get inner script representation
-    pub fn get_inner(&self) -> Option<&PBXShellScriptBuildPhase> {
-        self.inner.as_ref()
-    }
-
-    /// Get mutable inner script representation
-    pub fn get_inner_mut(&mut self) -> Option<&mut PBXShellScriptBuildPhase> {
-        self.inner.as_mut()
-    }
-
     /// Whether build phase is PBXSourcesBuildPhase
     pub fn is_sources(&self) -> bool {
         self.kind.is_sources()
@@ -145,5 +66,61 @@ impl PBXBuildPhase {
     /// Whether build phase is PBXRezBuildPhase
     pub fn is_carbon_resources(&self) -> bool {
         self.kind.is_carbon_resources()
+    }
+}
+
+impl<'a> AsPBXObject<'a> for PBXBuildPhase<'a> {
+    fn as_pbx_object(
+        id: String,
+        value: &'a PBXHashMap,
+        objects: &'a PBXObjectCollection,
+    ) -> anyhow::Result<Self>
+    where
+        Self: Sized + 'a,
+    {
+        let kind = value
+            .try_get_kind("isa")?
+            .as_pbx_build_phase()
+            .unwrap()
+            .clone();
+
+        Ok(Self {
+            id,
+            build_action_mask: value
+                .try_get_number("buildActionMask")
+                .map(|v| v.clone())
+                .unwrap_or_else(|_| Self::DEFAULT_BUILD_ACTION_MASK),
+            files: value
+                .get_vec("files")
+                .and_then(|vec| {
+                    Some(
+                        vec.as_vec_strings()
+                            .iter()
+                            .flat_map(|&k| objects.get(k))
+                            .collect::<Vec<_>>(),
+                    )
+                })
+                .unwrap_or_default(),
+            input_file_list_paths: value
+                .get_vec("inputFileListPaths")
+                .map(|v| v.as_vec_strings()),
+            output_file_list_paths: value
+                .get_vec("outputFileListPaths")
+                .map(|v| v.as_vec_strings()),
+            run_only_for_deployment_postprocessing: value
+                .get_number("runOnlyForDeploymentPostprocessing")
+                .map(|v| v == &1)
+                .unwrap_or_default(),
+            inner: if kind.is_run_script() {
+                Some(AsPBXObject::as_pbx_object(
+                    Default::default(),
+                    value,
+                    objects,
+                )?)
+            } else {
+                None
+            },
+            kind,
+        })
     }
 }
