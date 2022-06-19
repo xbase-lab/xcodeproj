@@ -6,7 +6,7 @@
 #![doc = include_str!("../README.md")]
 
 use anyhow::Result;
-use pbxproj::{PBXFSReference, PBXObjectCollection, PBXProject, PBXRootObject};
+use pbxproj::PBXRootObject;
 use std::path::{Path, PathBuf};
 
 mod macros;
@@ -14,8 +14,10 @@ pub mod pbxproj;
 pub mod xcode;
 
 /// Main presentation of XCodeProject
+#[derive(Debug, derive_deref_rs::Deref)]
 pub struct XCodeProject {
     root: PathBuf,
+    #[deref]
     pbxproj: PBXRootObject,
 }
 
@@ -29,35 +31,5 @@ impl XCodeProject {
             root: xcodeproj_folder.parent().unwrap().to_path_buf(),
             pbxproj: pbxproj_path.try_into()?,
         })
-    }
-
-    /// Get archive version
-    pub fn archive_version(&self) -> u8 {
-        self.pbxproj.archive_version()
-    }
-
-    /// Get pbxproj object version
-    pub fn object_version(&self) -> u8 {
-        self.pbxproj.object_version()
-    }
-
-    /// Get root project of pbxproj
-    pub fn root_project(&self) -> PBXProject {
-        self.pbxproj.root_project()
-    }
-
-    /// Get root group of pbxproj
-    pub fn root_group(&self) -> PBXFSReference {
-        self.pbxproj.root_group()
-    }
-
-    /// Get pbxproj objects
-    pub fn objects(&self) -> &PBXObjectCollection {
-        self.pbxproj.objects()
-    }
-
-    /// Get mutable reference of pbxproj objects
-    pub fn objects_mut(&mut self) -> &mut PBXObjectCollection {
-        self.pbxproj.objects_mut()
     }
 }
