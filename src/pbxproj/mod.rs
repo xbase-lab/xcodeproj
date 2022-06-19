@@ -167,10 +167,12 @@ fn test_demo1_representation() {
     );
 
     assert_eq!(1, project.projects().len());
+    let root_project = project.root_project();
+    println!("{:#?}", root_project.targets[0]);
 
     let root_group = project.root_group();
     assert_eq!(17, project.files().len());
-    println!("{:#?}", root_group.children);
+    // println!("{:#?}", root_group.children);
     assert_eq!(3, root_group.children.len());
     assert_eq!(None, root_group.name);
     assert_eq!(None, root_group.path);

@@ -44,6 +44,21 @@ pub struct PBXTarget<'a> {
     pub build_working_directory: Option<&'a String>,
 }
 
+impl<'a> PBXTarget<'a> {
+    /// get target's sdk roots from all build configuration settings
+    pub fn sdkroots(&self) -> Vec<&String> {
+        if let Some(ref bclist) = self.build_configuration_list {
+            bclist
+                .build_configurations
+                .iter()
+                .flat_map(|b| b.build_settings.get_string("SDKROOT"))
+                .collect::<Vec<&String>>()
+        } else {
+            Default::default()
+        }
+    }
+}
+
 impl<'a> AsPBXObject<'a> for PBXTarget<'a> {
     fn as_pbx_object(
         id: String,
