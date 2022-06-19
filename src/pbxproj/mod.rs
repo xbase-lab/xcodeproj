@@ -7,7 +7,10 @@ pub use object::*;
 pub use value::*;
 
 use anyhow::Result;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 use tap::Pipe;
 
 /// `Main` Representation of project.pbxproj file
@@ -75,6 +78,14 @@ impl PBXRootObject {
     #[must_use]
     pub fn objects_mut(&mut self) -> &mut PBXObjectCollection {
         &mut self.objects
+    }
+
+    /// Get a hashmap of targets and their platform
+    pub fn targets_platform(&self) -> HashMap<String, PBXTargetPlatform> {
+        self.targets()
+            .into_iter()
+            .flat_map(|t| Some((t.name?.to_string(), t.platfrom(&self.objects))))
+            .collect::<HashMap<_, _>>()
     }
 }
 
