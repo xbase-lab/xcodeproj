@@ -158,7 +158,7 @@
 				LastUpgradeCheck = 1200;
 				TargetAttributes = {
 					0B66A7280B2FFE35D5F8E9A6 = {
-						DevelopmentTeam = 7N5BMV2F5G;
+						DevelopmentTeam = XXXXXXXXXX;
 					};
 				};
 			};
@@ -331,7 +331,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 7N5BMV2F5G;
+				DEVELOPMENT_TEAM = XXXXXXXXXX;
 				DISABLE_MANUAL_TARGET_ORDER_BUILD_WARNING = YES;
 				INFOPLIST_FILE = Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -350,7 +350,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 7N5BMV2F5G;
+				DEVELOPMENT_TEAM = XXXXXXXXXX;
 				DISABLE_MANUAL_TARGET_ORDER_BUILD_WARNING = YES;
 				INFOPLIST_FILE = Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;

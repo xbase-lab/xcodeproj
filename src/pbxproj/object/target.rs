@@ -46,14 +46,31 @@ pub struct PBXTarget<'a> {
 
 impl<'a> PBXTarget<'a> {
     /// get target's sdk roots from all build configuration settings
-    pub fn sdkroots(&self) -> Vec<&String> {
+    pub fn sdkroots(&'a self, objects: &'a PBXObjectCollection) -> Vec<&'a String> {
         if let Some(ref bclist) = self.build_configuration_list {
-            bclist
+            let mut sdkroots = bclist
                 .build_configurations
                 .iter()
                 .flat_map(|b| b.build_settings.get_string("SDKROOT"))
-                .collect::<Vec<&String>>()
+                .collect::<Vec<&String>>();
+            if sdkroots.is_empty() {
+                // sdkroot isn't defined in current build settings.
+                // Here, we need to find all build configurations sharing
+                // the same base configuration id
+                bclist
+                    .build_configurations
+                    .iter()
+                    .flat_map(|b| Some(b.base_configuration.as_ref()?.id.as_str()))
+                    .flat_map(|id| objects.get_build_configurations_by_base_id(id))
+                    .flat_map(|b| b.build_settings.get_string("SDKROOT"))
+                    .for_each(|root| sdkroots.push(root));
+            }
+            if sdkroots.is_empty() {
+                tracing::error!("No SDKROOT found for {:?}", self.name);
+            }
+            sdkroots
         } else {
+            tracing::error!("No build configuration list for {:?}", self.name);
             Default::default()
         }
     }

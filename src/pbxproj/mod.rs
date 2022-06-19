@@ -178,6 +178,48 @@ fn test_demo1_representation() {
     assert_eq!(None, root_group.path);
 }
 
+#[test]
+fn test_demo10_representation() {
+    let test_content = include_str!("../../tests/samples/demo10.pbxproj");
+    let project = PBXRootObject::try_from(test_content).unwrap();
+    let targets = project.targets();
+
+    assert_eq!(1, targets.len());
+    assert_eq!(&PBXTargetKind::Native, targets[0].kind);
+    assert_eq!(Some(&String::from("Scrumdinger")), targets[0].product_name);
+    assert_eq!(Some(&String::from("Scrumdinger")), targets[0].name);
+    assert!(!targets[0].sdkroots(project.objects()).is_empty());
+    assert_eq!(PBXProductType::Application, targets[0].product_type);
+    assert_eq!(None, targets[0].build_tool_path);
+    assert_eq!(None, targets[0].build_arguments_string);
+    assert_eq!(None, targets[0].build_working_directory);
+    assert_eq!(None, targets[0].pass_build_settings_in_environment);
+    assert_eq!(3, targets[0].build_phases.len());
+    assert_eq!(
+        vec![
+            (&PBXBuildPhaseKind::Sources, 11),
+            (&PBXBuildPhaseKind::Frameworks, 0),
+            (&PBXBuildPhaseKind::Resources, 4)
+        ],
+        targets[0]
+            .build_phases
+            .iter()
+            .map(|phase| (&phase.kind, phase.files.len()))
+            .collect::<Vec<_>>()
+    );
+
+    assert_eq!(1, project.projects().len());
+    let root_project = project.root_project();
+    println!("{:#?}", root_project.targets[0]);
+
+    let root_group = project.root_group();
+    assert_eq!(17, project.files().len());
+    // println!("{:#?}", root_group.children);
+    assert_eq!(5, root_group.children.len());
+    assert_eq!(None, root_group.name);
+    assert_eq!(None, root_group.path);
+}
+
 #[cfg(test)]
 macro_rules! test_demo_file {
     ($name:expr) => {{

@@ -58,7 +58,7 @@ impl PBXObjectCollection {
     /// Get vector by vector of T by predict
     pub fn get_vec_by<'a, T: AsPBXObject<'a> + 'a>(
         &'a self,
-        predict: fn(&(&String, &PBXHashMap)) -> bool,
+        predict: impl Fn(&(&String, &PBXHashMap)) -> bool,
     ) -> Vec<T> {
         self.iter()
             .filter(predict)
@@ -89,6 +89,15 @@ impl PBXObjectCollection {
         self.get_vec_by(|(_, v)| {
             v.get_kind("isa")
                 .map(|k| k.is_pbx_build_phase())
+                .unwrap_or_default()
+        })
+    }
+
+    /// Get all build phases
+    pub fn build_configurations<'a>(&'a self) -> Vec<PBXBuildPhase<'a>> {
+        self.get_vec_by(|(_, v)| {
+            v.get_kind("isa")
+                .map(|k| k.is_xc_build_configuration())
                 .unwrap_or_default()
         })
     }
@@ -223,6 +232,22 @@ impl PBXObjectCollection {
             } else {
                 false
             }
+        })
+    }
+
+    /// Get build configurations shearing a given baseConfiguration id
+    pub fn get_build_configurations_by_base_id<S: AsRef<str>>(
+        &self,
+        id: S,
+    ) -> Vec<XCBuildConfiguration> {
+        let key = id.as_ref();
+        self.get_vec_by(move |(_, v)| {
+            v.get_kind("isa")
+                .map(|o| o.is_xc_build_configuration())
+                .unwrap_or_default()
+                && v.get_string("baseConfigurationReference")
+                    .map(|s| s.as_str())
+                    == Some(key)
         })
     }
 
