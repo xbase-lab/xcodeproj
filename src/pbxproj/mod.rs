@@ -148,11 +148,16 @@ fn test_demo1_representation() {
     assert_eq!(Some(&String::from("Wordle")), targets[0].product_name);
     assert_eq!(Some(&String::from("Wordle")), targets[0].name);
     assert_eq!(PBXProductType::Application, targets[0].product_type);
+    assert_eq!(
+        PBXTargetPlatform::IOS,
+        targets[0].platfrom(project.objects())
+    );
     assert_eq!(None, targets[0].build_tool_path);
     assert_eq!(None, targets[0].build_arguments_string);
     assert_eq!(None, targets[0].build_working_directory);
     assert_eq!(None, targets[0].pass_build_settings_in_environment);
     assert_eq!(3, targets[0].build_phases.len());
+
     assert_eq!(
         vec![
             (&PBXBuildPhaseKind::Sources, 12),   // 12
@@ -188,8 +193,11 @@ fn test_demo10_representation() {
     assert_eq!(&PBXTargetKind::Native, targets[0].kind);
     assert_eq!(Some(&String::from("Scrumdinger")), targets[0].product_name);
     assert_eq!(Some(&String::from("Scrumdinger")), targets[0].name);
-    assert!(!targets[0].sdkroots(project.objects()).is_empty());
     assert_eq!(PBXProductType::Application, targets[0].product_type);
+    assert_eq!(
+        PBXTargetPlatform::IOS,
+        targets[0].platfrom(project.objects())
+    );
     assert_eq!(None, targets[0].build_tool_path);
     assert_eq!(None, targets[0].build_arguments_string);
     assert_eq!(None, targets[0].build_working_directory);

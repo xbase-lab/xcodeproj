@@ -27,6 +27,7 @@ enum-as-inner = "0.5.0"
 derive_is_enum_variant = "0.1.1"
 enum_variant_macros = "0.2.0"
 phf = "0.10.1"
+serde = { version = "1.0.137", features = ["derive"] }
 
 [dev-dependencies]
 tracing-test = "0.2.1"

@@ -1,9 +1,12 @@
 mod dependency;
+mod platform;
 pub use dependency::*;
 
 use anyhow::Result;
 
 use crate::pbxproj::*;
+
+pub use platform::PBXTargetPlatform;
 
 /// `Abstraction` for building a specific targets (a library, binary, or test).
 ///
@@ -46,7 +49,7 @@ pub struct PBXTarget<'a> {
 
 impl<'a> PBXTarget<'a> {
     /// get target's sdk roots from all build configuration settings
-    pub fn sdkroots(&'a self, objects: &'a PBXObjectCollection) -> Vec<&'a String> {
+    pub fn platfrom(&'a self, objects: &'a PBXObjectCollection) -> PBXTargetPlatform {
         if let Some(ref bclist) = self.build_configuration_list {
             let mut sdkroots = bclist
                 .build_configurations
@@ -68,9 +71,18 @@ impl<'a> PBXTarget<'a> {
             if sdkroots.is_empty() {
                 tracing::error!("No SDKROOT found for {:?}", self.name);
             }
-            sdkroots
+            sdkroots.dedup();
+            let sdkroot = &sdkroots[0];
+            if sdkroots.len() > 1 {
+                tracing::warn!("Get more then one sdkroot for target {:?}", self.name);
+                tracing::warn!("Using {sdkroot:?} as sdkroot");
+            }
+            PBXTargetPlatform::from_sdk_root(sdkroot.as_str())
         } else {
-            tracing::error!("No build configuration list for {:?}", self.name);
+            tracing::error!(
+                "No build configuration list for {:?}, platfrom is not identified",
+                self.name
+            );
             Default::default()
         }
     }
