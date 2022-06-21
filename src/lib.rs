@@ -5,7 +5,7 @@
 #![deny(rustdoc::broken_intra_doc_links)]
 #![doc = include_str!("../README.md")]
 
-use anyhow::{bail, Context, Result};
+use anyhow::Result;
 use pbxproj::PBXRootObject;
 use std::path::{Path, PathBuf};
 
@@ -23,25 +23,8 @@ pub struct XCodeProject {
 }
 
 impl XCodeProject {
-    /// Create new XCodeProject object from project root
-    pub fn new<P: AsRef<Path>>(root: P) -> Result<Self> {
-        let matches = wax::walk("*.xcodeproj", &root)
-            .context("Glob")?
-            .flatten()
-            .map(|entry| entry.into_path())
-            .collect::<Vec<PathBuf>>();
-
-        let path = if matches.is_empty() {
-            bail!("No Xcodeproj found at {:#?}", root.as_ref());
-        } else {
-            &matches[0]
-        };
-
-        Self::new_from_xcodeproj_folder(path)
-    }
-
     /// Create new XCodeProject object from xcodeproj_folder
-    pub fn new_from_xcodeproj_folder<P: AsRef<Path>>(xcodeproj_folder: P) -> Result<Self> {
+    pub fn new<P: AsRef<Path>>(xcodeproj_folder: P) -> Result<Self> {
         let xcodeproj_folder = xcodeproj_folder.as_ref();
         let pbxproj_path = xcodeproj_folder.join("project.pbxproj");
 
