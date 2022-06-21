@@ -14,7 +14,7 @@ use std::{
 use tap::Pipe;
 
 /// `Main` Representation of project.pbxproj file
-#[derive(Default, Debug, derive_new::new, derive_deref_rs::Deref)]
+#[derive(Default, derive_new::new, derive_deref_rs::Deref)]
 pub struct PBXRootObject {
     /// archiveVersion
     archive_version: u8,
@@ -27,6 +27,17 @@ pub struct PBXRootObject {
     objects: PBXObjectCollection,
     /// rootObjectReference
     root_object_reference: String,
+}
+
+impl std::fmt::Debug for PBXRootObject {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PBXRootObject")
+            .field("archive_version", &self.archive_version)
+            .field("object_version", &self.object_version)
+            .field("classes", &self.classes)
+            .field("root_object_reference", &self.root_object_reference)
+            .finish()
+    }
 }
 
 impl PBXRootObject {
