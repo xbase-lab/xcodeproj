@@ -55,4 +55,15 @@ impl XCodeProject {
     pub fn pbxproj(&self) -> &PBXRootObject {
         &self.pbxproj
     }
+
+    /// Get build file names with all targets
+    pub fn build_file_names(&self) -> Vec<String> {
+        self.build_files()
+            .into_iter()
+            .flat_map(|f| {
+                let file = f.file.as_ref()?;
+                Some(file.path.or(file.name)?.to_string())
+            })
+            .collect::<Vec<_>>()
+    }
 }
