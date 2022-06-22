@@ -83,10 +83,7 @@ impl<'a> PBXTarget<'a> {
             return PBXTargetPlatform::from_sdk_root(sdkroot.as_str());
         }
 
-        tracing::warn!(
-            "No build configuration list for {:?}, platfrom is not identified",
-            self.name
-        );
+        tracing::debug!("Using default for {:?}", self.name);
         Default::default()
     }
 }

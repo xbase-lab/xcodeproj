@@ -48,7 +48,7 @@ impl<'a> XCConfigurationList<'a> {
         sdkroots.dedup();
 
         if sdkroots.is_empty() {
-            tracing::info!(
+            tracing::trace!(
                 "no sdkroot found in build_configuration_list: {:?}",
                 self.id
             );
@@ -59,7 +59,7 @@ impl<'a> XCConfigurationList<'a> {
             self.build_configurations
                 .iter()
                 .flat_map(|b| Some(b.base_configuration.as_ref()?.id.as_str()))
-                .flat_map(|id| objects.get_build_configurations_by_base_id(dbg!(id)))
+                .flat_map(|id| objects.get_build_configurations_by_base_id(id))
                 .flat_map(|b| b.build_settings.get_string("SDKROOT"))
                 .for_each(|root| sdkroots.push(root));
 
