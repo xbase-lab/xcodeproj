@@ -36,6 +36,48 @@ impl<'a> AsPBXObject<'a> for XCConfigurationList<'a> {
         })
     }
 }
+impl<'a> XCConfigurationList<'a> {
+    /// Extract SDKROOT from build configurations
+    pub fn extract_sdkroot_from_children(&self, objects: &PBXObjectCollection) -> Option<String> {
+        let mut sdkroots = self
+            .build_configurations
+            .iter()
+            .flat_map(|b| b.build_settings.get_string("SDKROOT"))
+            .collect::<Vec<&String>>();
+
+        sdkroots.dedup();
+
+        if sdkroots.is_empty() {
+            tracing::info!(
+                "no sdkroot found in build_configuration_list: {:?}",
+                self.id
+            );
+
+            // sdkroot isn't defined in current build settings.
+            // Here, we need to find all build configurations sharing
+            // the same base configuration id
+            self.build_configurations
+                .iter()
+                .flat_map(|b| Some(b.base_configuration.as_ref()?.id.as_str()))
+                .flat_map(|id| objects.get_build_configurations_by_base_id(dbg!(id)))
+                .flat_map(|b| b.build_settings.get_string("SDKROOT"))
+                .for_each(|root| sdkroots.push(root));
+
+            // Means base configuration no defined
+            if sdkroots.is_empty() {
+                tracing::trace!(
+                    "Find SDKROOT: No base configuration in all config_list's configuration",
+                );
+                return None;
+            }
+        } else if sdkroots.len() > 1 {
+            tracing::trace!("Find SDKROOT: Get more then one sdkroot  {:?}", self.id);
+            tracing::trace!("Find SDKROOT Using {:?} as sdkroot", &sdkroots[0]);
+        }
+
+        Some(sdkroots[0].into())
+    }
+}
 
 // impl XCConfigurationList {
 //     /// Build configurations

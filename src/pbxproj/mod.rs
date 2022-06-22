@@ -95,7 +95,7 @@ impl PBXRootObject {
     pub fn targets_platform(&self) -> HashMap<String, PBXTargetPlatform> {
         self.targets()
             .into_iter()
-            .flat_map(|t| Some((t.name?.to_string(), t.platfrom(&self.objects))))
+            .flat_map(|t| Some((t.name?.to_string(), t.platform(&self.objects))))
             .collect::<HashMap<_, _>>()
     }
 }
@@ -172,7 +172,7 @@ fn test_demo1_representation() {
     assert_eq!(PBXProductType::Application, targets[0].product_type);
     assert_eq!(
         PBXTargetPlatform::IOS,
-        targets[0].platfrom(project.objects())
+        targets[0].platform(project.objects())
     );
     assert_eq!(None, targets[0].build_tool_path);
     assert_eq!(None, targets[0].build_arguments_string);
@@ -218,7 +218,7 @@ fn test_demo10_representation() {
     assert_eq!(PBXProductType::Application, targets[0].product_type);
     assert_eq!(
         PBXTargetPlatform::IOS,
-        targets[0].platfrom(project.objects())
+        targets[0].platform(project.objects())
     );
     assert_eq!(None, targets[0].build_tool_path);
     assert_eq!(None, targets[0].build_arguments_string);
@@ -265,6 +265,9 @@ macro_rules! test_demo_file {
 }
 
 #[cfg(test)]
+pub(crate) use test_demo_file;
+
+#[cfg(test)]
 mod tests {
     macro_rules! test_samples {
         ($($name:ident),*) => {
@@ -275,5 +278,5 @@ mod tests {
         };
     }
 
-    test_samples![demo1, demo2, demo3, demo4, demo5, demo6, demo7, demo8, demo9];
+    test_samples![demo1, demo2, demo3, demo4, demo5, demo6, demo7, demo8, demo9, demo10, demo11];
 }

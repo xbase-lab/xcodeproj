@@ -94,7 +94,7 @@ impl PBXObjectCollection {
     }
 
     /// Get all build phases
-    pub fn build_configurations<'a>(&'a self) -> Vec<PBXBuildPhase<'a>> {
+    pub fn build_configurations<'a>(&'a self) -> Vec<XCBuildConfiguration<'a>> {
         self.get_vec_by(|(_, v)| {
             v.get_kind("isa")
                 .map(|k| k.is_xc_build_configuration())

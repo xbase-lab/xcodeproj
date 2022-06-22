@@ -37,54 +37,57 @@ pub struct PBXTarget<'a> {
     pub kind: &'a PBXTargetKind,
     /// Target product install path. (relevant only for `PBXNativeTarget`)
     pub product_install_path: Option<&'a String>,
-    /// Path to the build tool that is invoked (required) (relevant only for `PBXLegeacyTarget`)
+    /// Path to the build tool that is invoked (required) (relevant only for `PBXLegaecyTarget`)
     pub build_tool_path: Option<&'a String>,
-    /// Build arguments to be passed to the build tool. (relevant only for `PBXLegeacyTarget`)
+    /// Build arguments to be passed to the build tool. (relevant only for `PBXLegaacyTarget`)
     pub build_arguments_string: Option<&'a String>,
-    /// Whether or not to pass Xcode build settings as environment variables down to the tool when invoked (relevant only for `PBXLegeacyTarget`)
+    /// Whether or not to pass Xcode build settings as environment variables down to the tool when invoked (relevant only for `PBXLegaecyTarget`)
     pub pass_build_settings_in_environment: Option<bool>,
     /// The directory where the build tool will be invoked during a build
     pub build_working_directory: Option<&'a String>,
 }
 
 impl<'a> PBXTarget<'a> {
+    /// FIX: rename to platform
     /// get target's sdk roots from all build configuration settings
-    pub fn platfrom(&'a self, objects: &'a PBXObjectCollection) -> PBXTargetPlatform {
+    pub fn platform(&'a self, objects: &'a PBXObjectCollection) -> PBXTargetPlatform {
         if let Some(ref bclist) = self.build_configuration_list {
-            let mut sdkroots = bclist
-                .build_configurations
-                .iter()
-                .flat_map(|b| b.build_settings.get_string("SDKROOT"))
-                .collect::<Vec<&String>>();
-            if sdkroots.is_empty() {
-                // sdkroot isn't defined in current build settings.
-                // Here, we need to find all build configurations sharing
-                // the same base configuration id
-                bclist
-                    .build_configurations
-                    .iter()
-                    .flat_map(|b| Some(b.base_configuration.as_ref()?.id.as_str()))
-                    .flat_map(|id| objects.get_build_configurations_by_base_id(id))
-                    .flat_map(|b| b.build_settings.get_string("SDKROOT"))
-                    .for_each(|root| sdkroots.push(root));
+            if let Some(sdkroot) = bclist.extract_sdkroot_from_children(objects) {
+                return PBXTargetPlatform::from_sdk_root(sdkroot.as_str());
             }
-            if sdkroots.is_empty() {
-                tracing::error!("No SDKROOT found for {:?}", self.name);
-            }
+
+            tracing::trace!("Find SDKROOT: Trying PBXProject Objects");
+            let mut sdkroots = objects
+                .projects()
+                .into_iter()
+                .flat_map(|p| {
+                    p.build_configuration_list
+                        .extract_sdkroot_from_children(objects)
+                })
+                .collect::<Vec<_>>();
+
             sdkroots.dedup();
+            if sdkroots.is_empty() {
+                tracing::trace!(
+                    "Find SDKROOT: using target info nor PBXPRoject data {:?}",
+                    self.name
+                );
+                return Default::default();
+            }
+
             let sdkroot = &sdkroots[0];
             if sdkroots.len() > 1 {
-                tracing::warn!("Get more then one sdkroot for target {:?}", self.name);
-                tracing::warn!("Using {sdkroot:?} as sdkroot");
+                tracing::trace!("Find SDKROOT: Get more then one sdkroot  {:?}", self.id);
+                tracing::trace!("Find SDKROOT Using {:?} as sdkroot", &sdkroots[0]);
             }
-            PBXTargetPlatform::from_sdk_root(sdkroot.as_str())
-        } else {
-            tracing::error!(
-                "No build configuration list for {:?}, platfrom is not identified",
-                self.name
-            );
-            Default::default()
+            return PBXTargetPlatform::from_sdk_root(sdkroot.as_str());
         }
+
+        tracing::warn!(
+            "No build configuration list for {:?}, platfrom is not identified",
+            self.name
+        );
+        Default::default()
     }
 }
 
@@ -106,7 +109,7 @@ impl<'a> AsPBXObject<'a> for PBXTarget<'a> {
             id,
             name: value.get_string("name"),
             product_name: value.get_string("productName"),
-            product_type: value.try_get_string("productType").unwrap().as_str().into(),
+            product_type: value.try_get_string("productType")?.as_str().into(),
             build_configuration_list: value
                 .get_string("buildConfigurationList")
                 .and_then(|key| objects.get(key)),
@@ -143,4 +146,25 @@ impl<'a> AsPBXObject<'a> for PBXTarget<'a> {
             build_working_directory: value.get_string("buildWorkingDirectory"),
         })
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::pbxproj::test_demo_file;
+    macro_rules! test_samples {
+        ($($name:ident),*) => {
+            $(#[test]
+              // #[tracing_test::traced_test]
+                fn $name() {
+                    let root_object = test_demo_file!($name);
+                    for target in root_object.targets() {
+                        let platform = target.platform(&root_object);
+                        println!("[{}] => {:?}: {:?}", stringify!($name), target.id, platform);
+                    }
+
+                })*
+        };
+    }
+
+    test_samples![demo1, demo2, demo3, demo4, demo5, demo6, demo7, demo8, demo9, demo10, demo11];
 }
