@@ -1,4 +1,45 @@
 # Changelog
+## [0.2.11] - 2022-06-22
+### <!-- 1 -->Bug Fixes
+- `(Target)` <a href="https://github.com/tami5/xcodeproj/commit/a26044f"> Get platform result in index outbound</a>
+
+## [0.2.10] - 2022-06-21
+### <!-- 0 -->Features
+- `(Xcodeproj)` <a href="https://github.com/tami5/xcodeproj/commit/e8f38f6"> Get all build file names</a>
+
+## [0.2.9] - 2022-06-21
+### <!-- 0 -->Features
+- `(Pbxproj)` <a href="https://github.com/tami5/xcodeproj/commit/6195eff"> Skip printing objects</a>
+### <!-- 2 -->Refactor
+- `(General)` <a href="https://github.com/tami5/xcodeproj/commit/c93e7c0"> Only create via xcodeproj_folder</a>
+
+## [0.2.8] - 2022-06-19
+### <!-- 0 -->Features
+- `(Target)` <a href="https://github.com/tami5/xcodeproj/commit/5052874"> Got the extra mile to find sdkroot</a>
+- `(Xcodeproj)` <a href="https://github.com/tami5/xcodeproj/commit/7ca1076"> Expose root and set name</a>
+- `(Xcodeproj)` <a href="https://github.com/tami5/xcodeproj/commit/b5ddde2"> Create from project root</a>
+- `(General)` <a href="https://github.com/tami5/xcodeproj/commit/04a8732"> Helper function to generate hashmap of target names and platform</a>
+### <!-- 2 -->Refactor
+- `(Target)` <a href="https://github.com/tami5/xcodeproj/commit/d06cba8"> Replace sdkroots with platform</a>
+
+## [0.2.7] - 2022-06-19
+### <!-- 0 -->Features
+- `(Target)` <a href="https://github.com/tami5/xcodeproj/commit/5730d7b"> Get sdkroots</a>
+### <!-- 2 -->Refactor
+- `(General)` <a href="https://github.com/tami5/xcodeproj/commit/e919309"> Remove unused dependency</a>
+
+## [0.2.6] - 2022-06-19
+### <!-- 0 -->Features
+- `(Xcodeproj)` <a href="https://github.com/tami5/xcodeproj/commit/06ed5c4"> Implement default</a>
+
+## [0.2.5] - 2022-06-19
+### <!-- 0 -->Features
+- `(Xcodeproj)` <a href="https://github.com/tami5/xcodeproj/commit/7cfe8c1"> Deref as pbxproj</a>
+
+## [0.2.4] - 2022-06-19
+### <!-- 2 -->Refactor
+- `(General)` <a href="https://github.com/tami5/xcodeproj/commit/8c045ae"> Create PBXObject at request</a>
+
 ## [0.2.3] - 2022-06-17
 ### <!-- 0 -->Features
 - `(Pbxproj)` <a href="https://github.com/tami5/xcodeproj/commit/53813b7"> PBXProject helper methods</a>
