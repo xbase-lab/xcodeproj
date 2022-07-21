@@ -1,4 +1,5 @@
 mod dependency;
+mod info;
 mod platform;
 pub use dependency::*;
 
@@ -6,6 +7,7 @@ use anyhow::Result;
 
 use crate::pbxproj::*;
 
+pub use info::PBXTargetInfo;
 pub use platform::PBXTargetPlatform;
 
 /// `Abstraction` for building a specific targets (a library, binary, or test).
@@ -48,43 +50,9 @@ pub struct PBXTarget<'a> {
 }
 
 impl<'a> PBXTarget<'a> {
-    /// FIX: rename to platform
-    /// get target's sdk roots from all build configuration settings
-    pub fn platform(&'a self, objects: &'a PBXObjectCollection) -> PBXTargetPlatform {
-        if let Some(ref bclist) = self.build_configuration_list {
-            if let Some(sdkroot) = bclist.extract_sdkroot_from_children(objects) {
-                return PBXTargetPlatform::from_sdk_root(sdkroot.as_str());
-            }
-
-            tracing::trace!("Find SDKROOT: Trying PBXProject Objects");
-            let mut sdkroots = objects
-                .projects()
-                .into_iter()
-                .flat_map(|p| {
-                    p.build_configuration_list
-                        .extract_sdkroot_from_children(objects)
-                })
-                .collect::<Vec<_>>();
-
-            sdkroots.dedup();
-            if sdkroots.is_empty() {
-                tracing::trace!(
-                    "Find SDKROOT: using target info nor PBXPRoject data {:?}",
-                    self.name
-                );
-                return Default::default();
-            }
-
-            let sdkroot = &sdkroots[0];
-            if sdkroots.len() > 1 {
-                tracing::trace!("Find SDKROOT: Get more then one sdkroot  {:?}", self.id);
-                tracing::trace!("Find SDKROOT Using {:?} as sdkroot", &sdkroots[0]);
-            }
-            return PBXTargetPlatform::from_sdk_root(sdkroot.as_str());
-        }
-
-        tracing::debug!("Using default for {:?}", self.name);
-        Default::default()
+    /// Get `PBXTargetInfo`
+    pub fn info(&'a self, objects: &'a PBXObjectCollection) -> PBXTargetInfo {
+        PBXTargetInfo::new(self, objects)
     }
 }
 
@@ -155,7 +123,7 @@ mod tests {
                 fn $name() {
                     let root_object = test_demo_file!($name);
                     for target in root_object.targets() {
-                        let platform = target.platform(&root_object);
+                        let platform = target.info(&root_object);
                         println!("[{}] => {:?}: {:?}", stringify!($name), target.id, platform);
                     }
 
