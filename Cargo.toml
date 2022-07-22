@@ -1,6 +1,6 @@
 [package]
 name = "xcodeproj"
-version = "0.2.14"
+version = "0.3.0"
 edition = "2021"
 description = "xcodeproj reader and parser."
 license = "MIT OR Apache-2.0"
@@ -30,6 +30,7 @@ enum_variant_macros    = "0.2.0"
 phf                    = "0.10.1"
 serde                  = { version = "1.0.137", features = ["derive"] }
 wax                    = "0.5.0"
+serde-xml-rs           = "0.5.1"
 
 [dev-dependencies]
 tracing-test           = "0.2.1"

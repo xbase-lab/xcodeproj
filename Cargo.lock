@@ -608,6 +608,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-xml-rs"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65162e9059be2f6a3421ebbb4fef3e74b7d9e7c60c50a0e292c6239f19f1edfa"
+dependencies = [
+ "log",
+ "serde",
+ "thiserror",
+ "xml-rs",
+]
+
+[[package]]
 name = "serde_derive"
 version = "1.0.137"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -945,7 +957,7 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "xcodeproj"
-version = "0.2.14"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "derive-deref-rs",
@@ -961,6 +973,7 @@ dependencies = [
  "phf",
  "phf_codegen",
  "serde",
+ "serde-xml-rs",
  "tap",
  "tracing",
  "tracing-appender",
@@ -968,3 +981,9 @@ dependencies = [
  "tracing-test",
  "wax",
 ]
+
+[[package]]
+name = "xml-rs"
+version = "0.8.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"

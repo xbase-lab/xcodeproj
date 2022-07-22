@@ -200,7 +200,7 @@ fn test_demo1_representation() {
     );
 
     assert_eq!(1, project.projects().len());
-    let root_project = project.root_project();
+    // let root_project = project.root_project();
     // println!("{:#?}", root_project.targets[0]);
 
     let root_group = project.root_group();
