@@ -31,7 +31,7 @@ impl TryFrom<&PBXValue> for XCVersionRequirement {
             .ok_or_else(|| anyhow::anyhow!("Can get XCVersionRequirement for non object type"))?;
         let key = map.try_get_string("kind")?;
         match key.as_str() {
-            "bracnh" => Self::Branch(map.try_get_string(&key)?.to_string()),
+            "branсh" => Self::Branch(map.try_get_string(&key)?.to_string()),
             "revision" => Self::Revision(map.try_get_string(&key)?.to_string()),
             "exactVersion" => Self::Exact(map.try_get_string("version")?.to_string()),
             "versionRange" => {
@@ -44,8 +44,8 @@ impl TryFrom<&PBXValue> for XCVersionRequirement {
                 Self::UpToNextMinorVersion(min.to_string())
             }
             "upToNextMajorVersion" => {
-                let max = map.try_get_string("maximumVersion")?;
-                Self::UpToNextMajorVersion(max.to_string())
+                let min = map.try_get_string("minimumVersion")?;
+                Self::UpToNextMajorVersion(min.to_string())
             }
             k => bail!("Unkown kind {k}"),
         }
@@ -59,7 +59,7 @@ impl From<XCVersionRequirement> for PBXValue {
         match value {
             XCVersionRequirement::UpToNextMajorVersion(v) => {
                 collect.insert("kind".to_string(), "upToNextMajorVersion".into());
-                collect.insert("maximumVersion".to_string(), v.into());
+                collect.insert("minimumVersion".to_string(), v.into());
             }
             XCVersionRequirement::UpToNextMinorVersion(v) => {
                 collect.insert("kind".to_string(), "upToNextMinorVersion".into());
