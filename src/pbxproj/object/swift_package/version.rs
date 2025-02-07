@@ -6,7 +6,7 @@ use tap::Pipe;
 /// [`XCRemoteSwiftPackageReference`] version rules.
 ///
 /// [`XCRemoteSwiftPackageReference`]: crate::pbxproj::XCRemoteSwiftPackageReference
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum XCVersionRequirement {
     /// Version can be bumped up to the next major version.
     UpToNextMajorVersion(String),
