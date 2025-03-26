@@ -19,10 +19,10 @@ bool    = { (^"YES" | ^"NO") ~ !"_" ~ !ASCII_ALPHANUMERIC }
 number  = @{ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)* ~ !ASCII_ALPHA }
 string  = @{ "\"" ~ INNER_STRING ~ "\"" }
 ident   = @{
-  (ASCII_ALPHA | ASCII_DIGIT | "_" | ("." | "/")* ~ ASCII_ALPHA{2}) ~ (ASCII_ALPHA | ASCII_DIGIT | "_" | "." | "/")*
+  (ASCII_ALPHA | ASCII_DIGIT | "_" | "." | ("." | "/")* ~ ASCII_ALPHA{2}) ~ (ASCII_ALPHA | ASCII_DIGIT | "_" | "." | "/")*
 }
 uuid    = @{
-  (ASCII_ALPHA{1} | ASCII_DIGIT{1}) ~ ASCII_ALPHANUMERIC{23} ~ !(ASCII_ALPHA | ".")
+  (ASCII_ALPHA{1} | ASCII_DIGIT{1}) ~ ASCII_ALPHANUMERIC{23,31} ~ !(ASCII_ALPHA | ".")
 }
 kind    = @{
      "PBXBuildFile"

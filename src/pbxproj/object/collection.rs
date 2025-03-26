@@ -151,7 +151,7 @@ impl PBXObjectCollection {
     /// Get All XCSwiftPackageProductDependency Objects
     pub fn swift_package_product_dependencies<'a>(
         &'a self,
-    ) -> Vec<XCSwiftPackageProductDependency> {
+    ) -> Vec<XCSwiftPackageProductDependency<'a>> {
         self.get_vec_by(|(_, v)| {
             v.get_kind("isa")
                 .map(|k| k.is_xc_swift_package_product_dependency())
@@ -160,7 +160,7 @@ impl PBXObjectCollection {
     }
 
     /// Get All XCRemoteSwiftPackageReference Objects
-    pub fn swift_package_references<'a>(&'a self) -> Vec<XCRemoteSwiftPackageReference> {
+    pub fn swift_package_references<'a>(&'a self) -> Vec<XCRemoteSwiftPackageReference<'a>> {
         self.get_vec_by(|(_, v)| {
             v.get_kind("isa")
                 .map(|k| k.is_xc_remote_swift_package_reference())
@@ -169,32 +169,32 @@ impl PBXObjectCollection {
     }
 
     /// Get PBXTarget
-    pub fn get_target<'a>(&'a self, key: &str) -> Option<PBXTarget> {
+    pub fn get_target<'a>(&'a self, key: &str) -> Option<PBXTarget<'a>> {
         self.get(key)
     }
 
     /// Get PBXBuildPhase
-    pub fn get_build_phase<'a>(&'a self, key: &str) -> Option<PBXBuildPhase> {
+    pub fn get_build_phase<'a>(&'a self, key: &str) -> Option<PBXBuildPhase<'a>> {
         self.get(key)
     }
 
     /// Get PBXBuildFile
-    pub fn get_build_file<'a>(&'a self, key: &str) -> Option<PBXBuildFile> {
+    pub fn get_build_file<'a>(&'a self, key: &str) -> Option<PBXBuildFile<'a>> {
         self.get(key)
     }
 
     /// Get PBXBuildRule
-    pub fn get_build_rule<'a>(&'a self, key: &str) -> Option<PBXBuildRule> {
+    pub fn get_build_rule<'a>(&'a self, key: &str) -> Option<PBXBuildRule<'a>> {
         self.get(key)
     }
 
     /// Get PBXProject
-    pub fn get_project<'a>(&'a self, key: &str) -> Option<PBXProject> {
+    pub fn get_project<'a>(&'a self, key: &str) -> Option<PBXProject<'a>> {
         self.get(key)
     }
 
     /// Get all files
-    pub fn get_file<'a>(&'a self, key: &str) -> Option<PBXFSReference> {
+    pub fn get_file<'a>(&'a self, key: &str) -> Option<PBXFSReference<'a>> {
         let fs_ref = self.get::<PBXFSReference, _>(key)?;
         if fs_ref.is_file() {
             Some(fs_ref)
@@ -204,7 +204,7 @@ impl PBXObjectCollection {
     }
 
     /// Get all files
-    pub fn get_group<'a>(&'a self, key: &str) -> Option<PBXFSReference> {
+    pub fn get_group<'a>(&'a self, key: &str) -> Option<PBXFSReference<'a>> {
         let fs_ref = self.get::<PBXFSReference, _>(key)?;
         if fs_ref.is_group() {
             Some(fs_ref)
@@ -214,7 +214,7 @@ impl PBXObjectCollection {
     }
 
     /// Get fs object
-    pub fn get_fs_object<'a>(&'a self, key: &str) -> Option<PBXFSReference> {
+    pub fn get_fs_object<'a>(&'a self, key: &str) -> Option<PBXFSReference<'a>> {
         self.get(key)
     }
 
@@ -222,7 +222,7 @@ impl PBXObjectCollection {
     pub fn get_group_by_name_or_path<'a, S: AsRef<str>>(
         &'a self,
         name_or_path: S,
-    ) -> Option<PBXFSReference> {
+    ) -> Option<PBXFSReference<'a>> {
         let name = name_or_path.as_ref();
         self.groups().into_iter().find(|o| {
             if let Some(n) = o.name {
@@ -255,7 +255,7 @@ impl PBXObjectCollection {
     pub fn get_swift_package_product_dependency<'a>(
         &'a self,
         key: &str,
-    ) -> Option<XCSwiftPackageProductDependency> {
+    ) -> Option<XCSwiftPackageProductDependency<'a>> {
         self.get(key)
     }
 
@@ -263,12 +263,12 @@ impl PBXObjectCollection {
     pub fn get_swift_package_reference<'a>(
         &'a self,
         key: &str,
-    ) -> Option<XCRemoteSwiftPackageReference> {
+    ) -> Option<XCRemoteSwiftPackageReference<'a>> {
         self.get(key)
     }
 
     /// Get PBXTarget by the target name
-    pub fn get_target_by_name<'a>(&'a self, name: &'a str) -> Option<PBXTarget> {
+    pub fn get_target_by_name<'a>(&'a self, name: &'a str) -> Option<PBXTarget<'a>> {
         self.targets().into_iter().find(|target| {
             if let Some(target_name) = target.name {
                 target_name == name
